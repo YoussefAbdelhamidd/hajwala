@@ -211,6 +211,7 @@ function App() {
   const [leaderboard, setLeaderboard] = useState(readLeaderboard)
   const [showLeaderboard, setShowLeaderboard] = useState(false)
   const savedRun = useRef(-1)
+  const touchControlsRef = useRef<HTMLDivElement>(null)
   const [crashReveal, setCrashReveal] = useState(false)
   const quality = useMemo(() => detectGraphicsQuality(), [])
   const [isFullscreen, setIsFullscreen] = useState(false)
@@ -272,6 +273,27 @@ function App() {
       clearInputs()
     }
   }, [])
+
+  // Kill iOS/Android long-press callouts (Copy / Select All) while multi-touch driving.
+  useEffect(() => {
+    if (!started) return
+    const block = (e: Event) => e.preventDefault()
+    const clearSel = () => window.getSelection()?.removeAllRanges()
+    document.addEventListener('selectstart', block)
+    document.addEventListener('selectionchange', clearSel)
+    document.addEventListener('contextmenu', block)
+    const root = touchControlsRef.current
+    const touchOpts: AddEventListenerOptions = { passive: false, capture: true }
+    root?.addEventListener('touchstart', block, touchOpts)
+    root?.addEventListener('touchmove', block, touchOpts)
+    return () => {
+      document.removeEventListener('selectstart', block)
+      document.removeEventListener('selectionchange', clearSel)
+      document.removeEventListener('contextmenu', block)
+      root?.removeEventListener('touchstart', block, touchOpts)
+      root?.removeEventListener('touchmove', block, touchOpts)
+    }
+  }, [started])
 
   useEffect(() => {
     try { localStorage.setItem('tafheet-best', String(best)) } catch { /* storage unavailable */ }
@@ -572,7 +594,11 @@ function App() {
         </>
       )}
       {showChrome && started && (
-        <div className="touch-controls" onContextMenu={e => e.preventDefault()}>
+        <div
+          ref={touchControlsRef}
+          className="touch-controls"
+          onContextMenu={e => e.preventDefault()}
+        >
           <div className="touch-steer">
             {steerMode === 'wheel' ? <TouchSteeringWheel /> : <TouchSteerButtons />}
           </div>
