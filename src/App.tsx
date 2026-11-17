@@ -13,8 +13,15 @@ const STEER_LOCK_DEG = 140
 const STEER_LOCK_RAD = (STEER_LOCK_DEG * Math.PI) / 180
 /** Ignore twist samples too close to the hub (atan2 goes wild there). */
 const STEER_HUB_RATIO = 0.18
+const HOWTO_KEY = 'tafheet-howto-seen'
+const LOGO_URL = '/al-romansiah-logo.png?v=white1'
+const MARK_URL = '/al-romansiah-mark.png?v=white1'
 
 type OrientationMode = 'auto' | 'portrait' | 'landscape'
+
+function readHowToSeen() {
+  try { return localStorage.getItem(HOWTO_KEY) === '1' } catch { return false }
+}
 
 function unwrapDelta(from: number, to: number) {
   let d = to - from
@@ -118,6 +125,7 @@ function App() {
   const [runId, setRunId] = useState(0)
   const [best, setBest] = useState(() => { try { return Number(localStorage.getItem('tafheet-best') || 0) } catch { return 0 } })
   const [help, setHelp] = useState(false)
+  const [showHowTo, setShowHowTo] = useState(() => !readHowToSeen())
   const [leaderboard, setLeaderboard] = useState(readLeaderboard)
   const [showLeaderboard, setShowLeaderboard] = useState(false)
   const savedRun = useRef(-1)
@@ -305,6 +313,11 @@ function App() {
     }
   }, [isFullscreen, orientation, lockOrientation])
 
+  const dismissHowTo = useCallback(() => {
+    setShowHowTo(false)
+    try { localStorage.setItem(HOWTO_KEY, '1') } catch { /* still playable this session */ }
+  }, [])
+
   const start = () => {
     clearInputs()
     setStats(initialStats)
@@ -312,10 +325,11 @@ function App() {
     setStarted(true)
     setPaused(false)
     setShowLeaderboard(false)
+    setShowHowTo(false)
   }
 
   // Keep the highway/car visible on the entry screen; only simulate once the run starts.
-  const running = started && !paused && !help && !showLeaderboard && !(started && stats.crashed)
+  const running = started && !paused && !help && !showHowTo && !showLeaderboard && !(started && stats.crashed)
   const showChrome = !boot.visible
 
   return (
@@ -336,7 +350,7 @@ function App() {
       {boot.visible && (
         <div className={`boot-screen${boot.fading ? ' boot-screen-out' : ''}`} role="status" aria-live="polite" aria-busy={!boot.fading}>
           <div className="boot-card">
-            <img className="boot-logo" src="/al-romansiah-logo.png" alt="الرومانسية" width={200} height={56} />
+            <img className="boot-logo" src={LOGO_URL} alt="الرومانسية" width={200} height={56} />
             <p className="boot-eyebrow">الرومانسية · الرياض</p>
             <h1 className="boot-title">أمسك<br /><em>الصينية.</em></h1>
             <p className="boot-label">{boot.label}</p>
@@ -352,7 +366,7 @@ function App() {
         <>
           <header>
             <a className="brand" href="/" aria-label="الرومانسية — الصفحة الرئيسية">
-              <img className="brand-logo" src="/al-romansiah-logo.png" alt="الرومانسية" width={180} height={50} />
+              <img className="brand-logo" src={LOGO_URL} alt="الرومانسية" width={180} height={50} />
               <span className="brand-tag">الدجاجة تركب</span>
             </a>
             <div className="location">
@@ -383,7 +397,14 @@ function App() {
               >عرضي</button>
             </div>
             <button className="icon-button" onClick={() => setShowLeaderboard(v => !v)} aria-label="المتصدرون المحليون">♛</button>
-            <button className="icon-button" onClick={() => setHelp(v => !v)} aria-label="طريقة اللعب">؟</button>
+            <button
+              className="icon-button"
+              onClick={() => {
+                if (showHowTo) dismissHowTo()
+                setHelp(v => !v)
+              }}
+              aria-label="طريقة اللعب"
+            >؟</button>
             {started && (
               <button className="icon-button" onClick={() => setPaused(v => !v)} aria-label={paused ? 'متابعة' : 'إيقاف'}>
                 {paused ? '▷' : 'Ⅱ'}
@@ -397,7 +418,7 @@ function App() {
           {!started && (
             <section className="intro">
               <div className="eyebrow">
-                <img src="/al-romansiah-mark.png" alt="" width={22} height={22} />
+                <img src={MARK_URL} alt="" width={22} height={22} />
                 <span>الرومانسية · الرياض</span>
               </div>
               <h1>أمسك<br /><em>الصينية.</em></h1>
@@ -456,7 +477,7 @@ function App() {
               <span><kbd>SPACE</kbd> فرامل يد</span>
             </div>
             <span className="footer-note">
-              <img src="/al-romansiah-logo.png" alt="الرومانسية" width={110} height={30} />
+              <img src={LOGO_URL} alt="الرومانسية" width={110} height={30} />
             </span>
           </footer>
         </>
@@ -514,11 +535,30 @@ function App() {
           </div>
         </div>
       )}
+      {showChrome && showHowTo && !help && !finished && (
+        <div className="modal-backdrop howto-backdrop" role="dialog" aria-modal="true" aria-labelledby="howto-title">
+          <section className="modal howto-modal">
+            <span className="eyebrow modal-brand">
+              <img src={LOGO_URL} alt="الرومانسية" width={140} height={38} />
+              <span>أول جولة</span>
+            </span>
+            <h2 id="howto-title">كيف تلعب.</h2>
+            <ul className="howto-list">
+              <li><kbd>W</kbd> / <kbd>↑</kbd> بنزين · <kbd>S</kbd> / <kbd>↓</kbd> فرامل · <kbd>A</kbd><kbd>D</kbd> توجيه · <kbd>SPACE</kbd> فرامل يد</li>
+              <li>سرّع، لف، واضغط فرامل اليد لكسر تماسك الخلف — بعدين وجّه عكس الانزلاق عشان تمسكه.</li>
+              <li>الدرفت فوق ٣٦ كم/س على الأسفلت يجيب نقاط. اربط الانزلاقات خلال {CHAIN_WINDOW} ثوانٍ، وارفع المضاعف لـ ×٥.</li>
+              <li>الخروج عن الأسفلت، لمس سيارة مرور، أو قطع سلسلة الدرفت ينهي الجولة. التجاوزات القريبة تعطي بونص.</li>
+              <li>على اللمس: عجلة اليسار، دواسات وفرامل يد على اليمين.</li>
+            </ul>
+            <button className="start" onClick={dismissHowTo}>تمام، يلا <span>↖</span></button>
+          </section>
+        </div>
+      )}
       {showChrome && (help || (started && paused) || finished) && (
         <div className="modal-backdrop">
           <section className="modal">
             <span className="eyebrow modal-brand">
-              <img src="/al-romansiah-logo.png" alt="الرومانسية" width={140} height={38} />
+              <img src={LOGO_URL} alt="الرومانسية" width={140} height={38} />
               <span>جولة الصينية</span>
             </span>
             <h2>{help ? 'لاقِ زاويتك.' : finished ? 'الصينية لسه سخنة.' : 'الدجاجة تقدر تستنى.'}</h2>
@@ -550,7 +590,7 @@ function App() {
         <div className="modal-backdrop leaderboard-backdrop">
           <section className="modal leaderboard">
             <span className="eyebrow modal-brand">
-              <img src="/al-romansiah-logo.png" alt="الرومانسية" width={140} height={38} />
+              <img src={LOGO_URL} alt="الرومانسية" width={140} height={38} />
               <span>أفضل ١٠ / هذا الجهاز</span>
             </span>
             <h2>سجّل علامتك.</h2>

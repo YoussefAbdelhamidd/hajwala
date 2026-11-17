@@ -1,6 +1,6 @@
 /** Critical first-paint assets — fetched once so the intro scene has no pop-in. */
 
-export const CAR_URL = '/2014_nissan_ddsen.glb?v=wheels3'
+export const CAR_URL = '/2014_nissan_ddsen.glb?v=logo-white1'
 export const TOWER_URL = '/saudi__tower.glb'
 export const MASCOT_ROOT = '/57dc3d0f-669e-4be7-a9ec-70d5a4e98508'
 export const RESTAURANT_ROOT = '/restaurant'
@@ -12,8 +12,8 @@ const ASSET_URLS = [
   `${MASCOT_ROOT}/texture_diffuse.png`,
   `${RESTAURANT_ROOT}/base.obj`,
   `${RESTAURANT_ROOT}/texture_diffuse.jpg`,
-  '/al-romansiah-logo.png',
-  '/al-romansiah-mark.png',
+  '/al-romansiah-logo.png?v=white1',
+  '/al-romansiah-mark.png?v=white1',
 ]
 
 export type BootProgress = {

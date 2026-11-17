@@ -236,3 +236,18 @@ header{top:max(8px,env(safe-area-inset-top));inset-inline-start:max(8px,env(safe
 .boot-percent{display:block;margin-top:10px;font:700 14px/1 'Cairo',sans-serif;letter-spacing:0;color:#ffd7b0}
 @media(max-width:760px){.boot-logo{height:32px}.boot-title{font-size:48px}.boot-screen{padding:20px}.boot-card{width:min(360px,100%)}}
 @media(pointer:coarse) and (orientation:landscape){.boot-logo{height:24px;margin-bottom:10px}.boot-eyebrow{margin-bottom:6px}.boot-title{font-size:32px;margin-bottom:12px}.boot-label{margin-bottom:8px}.boot-screen{padding:12px}}
+
+.howto-backdrop{z-index:7}
+.howto-modal{max-width:440px}
+.howto-list{list-style:none;margin:8px 0 0;padding:0;display:flex;flex-direction:column;gap:10px}
+.howto-list li{font-size:14px;line-height:1.75;color:#d5ceb9;padding:10px 12px;border:1px solid #f4e8c520;background:#2f1510}
+.howto-list kbd{margin-inline:2px;vertical-align:middle}
+
+.boot-logo,.brand-logo,.modal-brand img,.footer-note img,.eyebrow img{background:#fff}
+.boot-logo,.brand-logo,.modal-brand img,.footer-note img{padding:4px 8px}
+.eyebrow img{padding:2px;border-radius:2px}
+
+@media(pointer:coarse) and (orientation:landscape){
+.howto-list{gap:6px}
+.howto-list li{font-size:12px;line-height:1.45;padding:6px 8px}
+}
