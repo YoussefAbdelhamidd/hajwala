@@ -31,7 +31,7 @@ export function stepScore(s: RunState, dt: number, speed: number, slip: number, 
   // No upper angle cap — deep slides and full 360s stay in the chain.
   const drift = onRoad && speed > 10 && angle > .2
   if (!onRoad) {
-    endRun(s, 'OFF ROAD · RUN OVER')
+    endRun(s, 'خارج الطريق · انتهت الجولة')
     return false
   }
   if (drift) {
@@ -43,7 +43,7 @@ export function stepScore(s: RunState, dt: number, speed: number, slip: number, 
       s.score += 250 * s.combo
       // Links are the main way to climb — small time bump, not a free tier.
       s.slide += .4
-      announce(s, `LINKED DRIFT +${250 * s.combo}`)
+      announce(s, `درفت مربوط +${250 * s.combo}`)
     }
     s.direction = direction === 0 ? s.direction : direction
     s.grace = CHAIN_WINDOW
@@ -55,7 +55,7 @@ export function stepScore(s: RunState, dt: number, speed: number, slip: number, 
     s.score += dt * speed * angle * s.combo * 8
   } else if (s.grace > 0) {
     s.grace = Math.max(0, s.grace - dt)
-    if (s.grace === 0) endRun(s, 'DRIFT CHAIN ENDED · RUN OVER')
+    if (s.grace === 0) endRun(s, 'انقطعت سلسلة الدرفت · انتهت الجولة')
   }
   return drift
 }
@@ -137,7 +137,7 @@ export function stepTraffic(s: RunState & DrivingState, traffic: TrafficCar[], d
       other.passed = true
       s.forward *= .08; s.lateral *= .4; s.yawRate *= .4
       s.speed = Math.hypot(s.forward, s.lateral)
-      endRun(s, 'TRAFFIC COLLISION · RUN OVER')
+      endRun(s, 'اصطدام بالمرور · انتهت الجولة')
       return false
     }
     const relativeZ = other.pathZ - s.z
@@ -148,7 +148,7 @@ export function stepTraffic(s: RunState & DrivingState, traffic: TrafficCar[], d
       if (s.speed > other.speed + 5 && gap > 1.9 && gap < 4.5 && onAsphalt) {
         const points = (drift ? 600 : 200) * s.combo
         s.score += points; s.nearMisses++
-        announce(s, `${drift ? 'SIDEWAYS PASS' : 'CLOSE PASS'} +${points}`)
+        announce(s, `${drift ? 'تجاوز جانبي' : 'تجاوز قريب'} +${points}`)
       }
     }
     if (relativeZ > 65 || relativeZ < -1100) {
@@ -207,7 +207,7 @@ export function stepMascots(s: RunState & DrivingState, mascots: RoadMascot[], d
     if (overlapsMascot(s.x, s.z, bird)) {
       const points = MASCOT_POINTS * s.combo
       s.score += points
-      announce(s, `CHICKEN HIT +${points}`)
+      announce(s, `ضرب الدجاجة +${points}`)
       bird.phase = 'explode'
       bird.phaseT = 0
       continue

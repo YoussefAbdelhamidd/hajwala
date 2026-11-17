@@ -31,7 +31,7 @@ test('direction transitions preserve the multiplier and award a single link bonu
     g.stepScore(s, 1 / fps, 30, -.35, true)
     assert.equal(s.combo, 3)
     assert.ok(s.score - score >= 750)
-    assert.match(s.event, /LINKED DRIFT/)
+    assert.match(s.event, /درفت مربوط/)
     const next = s.score
     g.stepScore(s, 1 / fps, 30, -.35, true)
     assert.ok(s.score - next < 20)
@@ -115,7 +115,7 @@ test('startup has no chain timeout; leaving the road still ends a fresh run', ()
   assert.equal(s.crashed, false)
   g.stepScore(s, 1 / 60, 20, 0, false)
   assert.equal(s.crashed, true)
-  assert.match(s.event, /OFF ROAD/)
+  assert.match(s.event, /خارج الطريق/)
 })
 test('ended runs freeze scoring and traffic and a new run starts clean', () => {
   const s = { ...initialDriving(), ...g.newRun() }
@@ -139,7 +139,7 @@ test('road mascots award combo points on hit, explode, and do not end the run', 
   assert.equal(s.crashed, false)
   assert.equal(s.score, g.MASCOT_POINTS * 2)
   assert.equal(bird.phase, 'explode')
-  assert.match(s.event, /CHICKEN HIT/)
+  assert.match(s.event, /ضرب الدجاجة/)
   const score = s.score
   g.stepMascots(s, [bird], .01)
   assert.equal(s.score, score)

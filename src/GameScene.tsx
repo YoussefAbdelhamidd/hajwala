@@ -11,7 +11,7 @@ import type { RoadMascot } from './gameplay'
 import { CollectibleMascot, MascotBuddy, RoadsideMascot } from './Mascot'
 import { RoadsideRestaurants } from './Restaurant'
 import { buildRoadGeometry, isOnAsphalt, resetRoad, roadCenter, roadsidePose, roadHeading, wrapAlongRoad, ROAD_HALF } from './road'
-import { keys, type GraphicsQuality, type Stats } from './gameUi'
+import { keys, steerAxis, type GraphicsQuality, type Stats } from './gameUi'
 import { CAR_URL, TOWER_URL } from './bootAssets'
 
 useGLTF.preload(CAR_URL)
@@ -234,7 +234,11 @@ function World({
     const dt = Math.min(delta, .04), s = state.current
     if (!boot.current) return
     const active = running && !s.crashed
-    const steer = active ? Number(keys.has('ArrowLeft') || keys.has('KeyA')) - Number(keys.has('ArrowRight') || keys.has('KeyD')) : 0
+    const keyboardSteer = Number(keys.has('ArrowLeft') || keys.has('KeyA')) - Number(keys.has('ArrowRight') || keys.has('KeyD'))
+    const analog = steerAxis.value
+    const steer = active
+      ? Math.max(-1, Math.min(1, Math.abs(analog) > 0.02 ? analog : keyboardSteer))
+      : 0
     const brake = keys.has('Space') && active
     const gas = active && (keys.has('ArrowUp') || keys.has('KeyW'))
     const slow = active && (keys.has('ArrowDown') || keys.has('KeyS'))

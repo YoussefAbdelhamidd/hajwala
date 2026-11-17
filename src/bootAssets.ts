@@ -44,23 +44,23 @@ export async function preloadBootAssets(
     onProgress({ ratio: Math.min(0.92, finished / total), label })
   }
 
-  onProgress({ ratio: 0.04, label: 'Gathering the platter…' })
+  onProgress({ ratio: 0.04, label: 'نجهّز الصينية…' })
 
   await Promise.all(
     ASSET_URLS.map(url =>
       fetchAsset(url)
         .catch(() => fetch(url).then(r => r.arrayBuffer()))
         .then(() => {
-          if (url.includes('nissan')) tick('Parking the Datsun…')
-          else if (url.includes('tower')) tick('Raising the towers…')
-          else if (url.includes('57dc3d0f')) tick('Calling the chicken…')
-          else if (url.includes('restaurant')) tick('Opening the kitchen…')
-          else tick('Setting the table…')
+          if (url.includes('nissan')) tick('نركن الداتسن…')
+          else if (url.includes('tower')) tick('نرفع الأبراج…')
+          else if (url.includes('57dc3d0f')) tick('نستدعي الدجاجة…')
+          else if (url.includes('restaurant')) tick('نفتح المطبخ…')
+          else tick('نرتّب الطاولة…')
         }),
     ),
   )
 
-  onProgress({ ratio: 0.88, label: 'Lighting the highway…' })
+  onProgress({ ratio: 0.88, label: 'نضيء الطريق…' })
   await import('./GameScene')
-  onProgress({ ratio: 0.94, label: 'Almost ready…' })
+  onProgress({ ratio: 0.94, label: 'تقريباً جاهز…' })
 }

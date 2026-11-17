@@ -22,6 +22,14 @@ export const initialStats: Stats = {
 /** Shared key set — App writes, World reads. */
 export const keys = new Set<string>()
 
+/** Analog steer from the touch wheel: +1 left … −1 right (matches A − D). */
+export const steerAxis = { value: 0 }
+
+export function clearInputs() {
+  keys.clear()
+  steerAxis.value = 0
+}
+
 export type GraphicsQuality = {
   dpr: [number, number]
   shadows: boolean
