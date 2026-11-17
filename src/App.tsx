@@ -13,13 +13,18 @@ const STEER_LOCK_DEG = 140
 const STEER_LOCK_RAD = (STEER_LOCK_DEG * Math.PI) / 180
 /** Ignore twist samples too close to the hub (atan2 goes wild there). */
 const STEER_HUB_RATIO = 0.18
+/** Degrees of device tilt past the deadzone that map to full analog steer. */
+const GYRO_FULL_DEG = 28
+const GYRO_DEADZONE_DEG = 2.5
+const GYRO_SMOOTH = 0.28
 const HOWTO_KEY = 'tafheet-howto-seen'
 const STEER_MODE_KEY = 'tafheet-steer-mode'
 const LOGO_URL = '/al-romansiah-logo.png?v=white1'
 const MARK_URL = '/al-romansiah-mark.png?v=white1'
 
 type OrientationMode = 'auto' | 'portrait' | 'landscape'
-type SteerMode = 'wheel' | 'buttons'
+type SteerMode = 'wheel' | 'buttons' | 'gyro'
+type GyroPermission = 'granted' | 'denied' | 'unsupported'
 
 function readHowToSeen() {
   try { return localStorage.getItem(HOWTO_KEY) === '1' } catch { return false }
@@ -27,10 +32,60 @@ function readHowToSeen() {
 
 function readSteerMode(): SteerMode {
   try {
-    return localStorage.getItem(STEER_MODE_KEY) === 'buttons' ? 'buttons' : 'wheel'
+    const stored = localStorage.getItem(STEER_MODE_KEY)
+    if (stored === 'buttons' || stored === 'gyro' || stored === 'wheel') return stored
+    return 'wheel'
   } catch {
     return 'wheel'
   }
+}
+
+function screenOrientationAngle() {
+  const fromApi = screen.orientation?.angle
+  if (typeof fromApi === 'number') return ((fromApi % 360) + 360) % 360
+  const legacy = (window as Window & { orientation?: number }).orientation
+  if (typeof legacy === 'number') return ((legacy % 360) + 360) % 360
+  return 0
+}
+
+/** Map device roll onto screen left/right tilt in degrees (negative = lean left). */
+function tiltFromOrientation(e: DeviceOrientationEvent): number | null {
+  if (e.beta == null || e.gamma == null) return null
+  const angle = screenOrientationAngle()
+  if (angle >= 45 && angle < 135) return e.beta
+  if (angle >= 225 && angle < 315) return -e.beta
+  if (angle >= 135 && angle < 225) return -e.gamma
+  return e.gamma
+}
+
+/** +1 left … −1 right, matching keyboard A − D and the touch wheel. */
+function steerFromTilt(tiltDeg: number, centerDeg: number) {
+  const delta = tiltDeg - centerDeg
+  const excess = Math.max(0, Math.abs(delta) - GYRO_DEADZONE_DEG)
+  if (excess === 0) return 0
+  return Math.max(-1, Math.min(1, (-Math.sign(delta) * excess) / GYRO_FULL_DEG))
+}
+
+/** Survives remounts so the in-run panel can skip a second iOS prompt. */
+let gyroPermissionGranted = false
+
+async function requestGyroPermission(): Promise<GyroPermission> {
+  if (typeof window === 'undefined' || !('DeviceOrientationEvent' in window)) return 'unsupported'
+  const DOE = DeviceOrientationEvent as typeof DeviceOrientationEvent & {
+    requestPermission?: () => Promise<'granted' | 'denied'>
+  }
+  if (typeof DOE.requestPermission === 'function') {
+    try {
+      const result = (await DOE.requestPermission()) === 'granted' ? 'granted' : 'denied'
+      gyroPermissionGranted = result === 'granted'
+      return result
+    } catch {
+      gyroPermissionGranted = false
+      return 'denied'
+    }
+  }
+  gyroPermissionGranted = true
+  return 'granted'
 }
 
 function unwrapDelta(from: number, to: number) {
@@ -167,6 +222,115 @@ function TouchSteerButtons() {
   )
 }
 
+function initialGyroStatus(): 'active' | 'denied' | 'unsupported' {
+  if (typeof window === 'undefined' || !('DeviceOrientationEvent' in window)) return 'unsupported'
+  const DOE = DeviceOrientationEvent as typeof DeviceOrientationEvent & {
+    requestPermission?: () => Promise<'granted' | 'denied'>
+  }
+  if (typeof DOE.requestPermission === 'function') {
+    return gyroPermissionGranted ? 'active' : 'denied'
+  }
+  return 'active'
+}
+
+function TouchGyroSteer() {
+  const needleRef = useRef<HTMLSpanElement>(null)
+  const centerRef = useRef<number | null>(null)
+  const smoothRef = useRef(0)
+  const [status, setStatus] = useState<'active' | 'denied' | 'unsupported'>(initialGyroStatus)
+  const [ariaSteer, setAriaSteer] = useState(0)
+
+  const applySteer = useCallback((value: number) => {
+    const next = Math.max(-1, Math.min(1, value))
+    steerAxis.value = next
+    if (needleRef.current) needleRef.current.style.transform = `translateX(-50%) rotate(${-next * 55}deg)`
+    setAriaSteer(next)
+  }, [])
+
+  const calibrate = useCallback(() => {
+    centerRef.current = null
+    smoothRef.current = 0
+    applySteer(0)
+  }, [applySteer])
+
+  const enable = useCallback(async () => {
+    const permission = await requestGyroPermission()
+    if (permission === 'unsupported') {
+      setStatus('unsupported')
+      return
+    }
+    if (permission === 'denied') {
+      setStatus('denied')
+      return
+    }
+    setStatus('active')
+    calibrate()
+  }, [calibrate])
+
+  useEffect(() => {
+    if (status !== 'active') {
+      applySteer(0)
+      return
+    }
+
+    const onOrient = (e: DeviceOrientationEvent) => {
+      const tilt = tiltFromOrientation(e)
+      if (tilt == null) return
+      if (centerRef.current == null) centerRef.current = tilt
+      const target = steerFromTilt(tilt, centerRef.current)
+      smoothRef.current += (target - smoothRef.current) * GYRO_SMOOTH
+      if (Math.abs(smoothRef.current) < 0.01 && Math.abs(target) < 0.01) smoothRef.current = 0
+      applySteer(smoothRef.current)
+    }
+
+    window.addEventListener('deviceorientation', onOrient)
+    return () => {
+      window.removeEventListener('deviceorientation', onOrient)
+      applySteer(0)
+    }
+  }, [status, applySteer])
+
+  if (status === 'unsupported') {
+    return (
+      <div className="touch-gyro touch-gyro-msg" role="status">
+        الجهاز ما يدعم الجيروسكوب
+      </div>
+    )
+  }
+
+  if (status === 'denied') {
+    return (
+      <div className="touch-gyro">
+        <button type="button" className="touch-btn touch-gyro-enable" onClick={enable}>
+          فعّل الجيروسكوب
+        </button>
+      </div>
+    )
+  }
+
+  return (
+    <div
+      className="touch-gyro"
+      role="slider"
+      aria-label="توجيه بالجيرو"
+      aria-valuemin={-100}
+      aria-valuemax={100}
+      aria-valuenow={Math.round(ariaSteer * 100)}
+      aria-valuetext={ariaSteer === 0 ? 'مستقيم' : ariaSteer > 0 ? `يسار ${Math.round(ariaSteer * 100)}٪` : `يمين ${Math.round(-ariaSteer * 100)}٪`}
+    >
+      <div className="touch-gyro-meter" aria-hidden="true">
+        <i className="touch-gyro-track" />
+        <span ref={needleRef} className="touch-gyro-needle" />
+        <i className="touch-gyro-center" />
+      </div>
+      <button type="button" className="touch-btn touch-gyro-cal" onClick={calibrate} aria-label="معايرة الجيروسكوب">
+        عاير
+      </button>
+      <span className="touch-gyro-hint">ميل الجهاز</span>
+    </div>
+  )
+}
+
 function SteerModePicker({
   value,
   onChange,
@@ -193,6 +357,14 @@ function SteerModePicker({
           onClick={() => onChange('buttons')}
         >
           أزرار
+        </button>
+        <button
+          type="button"
+          className={`steer-mode-option${value === 'gyro' ? ' is-on' : ''}`}
+          aria-pressed={value === 'gyro'}
+          onClick={() => onChange('gyro')}
+        >
+          جيرو
         </button>
       </div>
     </div>
@@ -422,8 +594,10 @@ function App() {
     try { localStorage.setItem(HOWTO_KEY, '1') } catch { /* still playable this session */ }
   }, [])
 
-  const chooseSteerMode = useCallback((mode: SteerMode) => {
+  const chooseSteerMode = useCallback(async (mode: SteerMode) => {
     clearInputs()
+    // iOS requires permission from a user gesture — request here when picking gyro.
+    if (mode === 'gyro') await requestGyroPermission()
     setSteerMode(mode)
     try { localStorage.setItem(STEER_MODE_KEY, mode) } catch { /* preference still applies this session */ }
   }, [])
@@ -600,7 +774,13 @@ function App() {
           onContextMenu={e => e.preventDefault()}
         >
           <div className="touch-steer">
-            {steerMode === 'wheel' ? <TouchSteeringWheel /> : <TouchSteerButtons />}
+            {steerMode === 'wheel' ? (
+              <TouchSteeringWheel />
+            ) : steerMode === 'buttons' ? (
+              <TouchSteerButtons />
+            ) : (
+              <TouchGyroSteer />
+            )}
           </div>
           <div className="touch-drive">
             <button
@@ -663,7 +843,7 @@ function App() {
               <li>سرّع، لف، واضغط فرامل اليد لكسر تماسك الخلف — بعدين وجّه عكس الانزلاق عشان تمسكه.</li>
               <li>الدرفت فوق ٣٦ كم/س على الأسفلت يجيب نقاط. اربط الانزلاقات خلال {CHAIN_WINDOW} ثوانٍ، وارفع المضاعف لـ ×٥.</li>
               <li>الخروج عن الأسفلت، لمس سيارة مرور، أو قطع سلسلة الدرفت ينهي الجولة. التجاوزات القريبة تعطي بونص.</li>
-              <li>على اللمس: اختَر عجلة أو أزرار يمين/يسار على الشاشة الرئيسية. الدواسات وفرامل اليد على اليمين.</li>
+              <li>على اللمس: اختَر عجلة أو أزرار أو جيرو (ميل الجهاز) على الشاشة الرئيسية. الدواسات وفرامل اليد على اليمين. في وضع الجيرو اضغط «عاير» وأنت ماسك الجهاز بشكل مريح.</li>
             </ul>
             <SteerModePicker value={steerMode} onChange={chooseSteerMode} />
             <button className="start" onClick={dismissHowTo}>تمام، يلا <span>↖</span></button>
@@ -682,7 +862,7 @@ function App() {
               <>
                 <p>اضغط W أو ↑ للتسارع. وجّه بـ A / D أو ← / →. اضغط Space وأنت تدور لكسر تماسك الخلف، ثم أفلتها ووجّه عكس الانزلاق عشان تمسكه. خفّف الدواسة إذا طاح الخلف زيادة.</p>
                 <p>الطريق يلتوي — اقرأ المنعطفات ودرّف فيها. الدرفت فوق ٣٦ كم/س على الأسفلت يجيب نقاط. الزاوية الثابتة ترفع المضاعف؛ الانزلاقات الضعيفة ما تحسب كثير. كل × يحتاج حوالي {COMBO_TIER_TIME} ثوانٍ درفت مستمر، يعني ×٥ يحتاج جولة طويلة مربوطة. عندك {CHAIN_WINDOW} ثانية تربط فيها الانزلاقة التالية. تغيير اتجاه الدرفت يعطي بونص. التجاوزات القريبة تعطي أكثر وأنت درفت. اضرب الدجاجات على الطريق لبونص — تنفجر والجولة تكمل. الخروج عن الأسفلت أو لمس أي سيارة مرور أو قطع سلسلة الدرفت ينهي الجولة.</p>
-                <p>على الشاشات اللمسية: اختَر عجلة أو أزرار يمين/يسار للتوجيه، والدواسات وفرامل اليد على اليمين. استخدم ملء / طولي / عرضي للعرض. امسك البنزين ووجّه، اضغط فرامل اليد لحظة، ثم وجّه ضد الانزلاق عشان تمسكه.</p>
+                <p>على الشاشات اللمسية: اختَر عجلة أو أزرار أو جيرو (ميل الجهاز) للتوجيه، والدواسات وفرامل اليد على اليمين. في الجيرو اضغط «عاير» وهو ممسوك بشكل مريح. استخدم ملء / طولي / عرضي للعرض. امسك البنزين ووجّه، اضغط فرامل اليد لحظة، ثم وجّه ضد الانزلاق عشان تمسكه.</p>
                 <SteerModePicker value={steerMode} onChange={chooseSteerMode} />
                 <button className="start" onClick={() => setHelp(false)}>تمام <span>↖</span></button>
               </>
