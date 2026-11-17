@@ -104,8 +104,8 @@ function TouchSteeringWheel() {
           state.grabAngle = polar.angle
           return
         }
-        // Clockwise twist → negative atan2 delta → right steer (−1).
-        applySteer(state.baseSteer + unwrapDelta(state.grabAngle, polar.angle) / STEER_LOCK_RAD)
+        // Screen Y is down, so clockwise (right turn) raises atan2 — negate for −1 right.
+        applySteer(state.baseSteer - unwrapDelta(state.grabAngle, polar.angle) / STEER_LOCK_RAD)
       }}
       onPointerUp={e => release(e.pointerId)}
       onPointerCancel={e => release(e.pointerId)}
