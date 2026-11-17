@@ -1,4 +1,4 @@
-import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
 import './App.css'
 import { preloadBootAssets } from './bootAssets'
 import { CHAIN_WINDOW, COMBO_TIER_TIME, readLeaderboard, rankRun, LEADERBOARD_KEY } from './gameplay'
@@ -14,13 +14,23 @@ const STEER_LOCK_RAD = (STEER_LOCK_DEG * Math.PI) / 180
 /** Ignore twist samples too close to the hub (atan2 goes wild there). */
 const STEER_HUB_RATIO = 0.18
 const HOWTO_KEY = 'tafheet-howto-seen'
+const STEER_MODE_KEY = 'tafheet-steer-mode'
 const LOGO_URL = '/al-romansiah-logo.png?v=white1'
 const MARK_URL = '/al-romansiah-mark.png?v=white1'
 
 type OrientationMode = 'auto' | 'portrait' | 'landscape'
+type SteerMode = 'wheel' | 'buttons'
 
 function readHowToSeen() {
   try { return localStorage.getItem(HOWTO_KEY) === '1' } catch { return false }
+}
+
+function readSteerMode(): SteerMode {
+  try {
+    return localStorage.getItem(STEER_MODE_KEY) === 'buttons' ? 'buttons' : 'wheel'
+  } catch {
+    return 'wheel'
+  }
 }
 
 function unwrapDelta(from: number, to: number) {
@@ -118,6 +128,77 @@ function TouchSteeringWheel() {
   )
 }
 
+function holdKeyHandlers(code: 'KeyA' | 'KeyD') {
+  return {
+    onPointerDown: (e: ReactPointerEvent<HTMLButtonElement>) => {
+      e.preventDefault()
+      e.currentTarget.setPointerCapture(e.pointerId)
+      keys.add(code)
+      steerAxis.value = 0
+    },
+    onPointerUp: () => keys.delete(code),
+    onPointerCancel: () => keys.delete(code),
+    onLostPointerCapture: () => keys.delete(code),
+  }
+}
+
+function TouchSteerButtons() {
+  return (
+    <div className="touch-steer-buttons" role="group" aria-label="توجيه">
+      <button
+        type="button"
+        className="touch-btn touch-turn touch-turn-left"
+        aria-label="يسار"
+        onContextMenu={e => e.preventDefault()}
+        {...holdKeyHandlers('KeyA')}
+      >
+        <span aria-hidden="true">←</span>
+      </button>
+      <button
+        type="button"
+        className="touch-btn touch-turn touch-turn-right"
+        aria-label="يمين"
+        onContextMenu={e => e.preventDefault()}
+        {...holdKeyHandlers('KeyD')}
+      >
+        <span aria-hidden="true">→</span>
+      </button>
+    </div>
+  )
+}
+
+function SteerModePicker({
+  value,
+  onChange,
+}: {
+  value: SteerMode
+  onChange: (mode: SteerMode) => void
+}) {
+  return (
+    <div className="steer-mode" role="group" aria-label="طريقة التوجيه">
+      <span className="steer-mode-label">التوجيه</span>
+      <div className="steer-mode-options">
+        <button
+          type="button"
+          className={`steer-mode-option${value === 'wheel' ? ' is-on' : ''}`}
+          aria-pressed={value === 'wheel'}
+          onClick={() => onChange('wheel')}
+        >
+          عجلة
+        </button>
+        <button
+          type="button"
+          className={`steer-mode-option${value === 'buttons' ? ' is-on' : ''}`}
+          aria-pressed={value === 'buttons'}
+          onClick={() => onChange('buttons')}
+        >
+          أزرار
+        </button>
+      </div>
+    </div>
+  )
+}
+
 function App() {
   const [stats, setStats] = useState(initialStats)
   const [started, setStarted] = useState(false)
@@ -126,6 +207,7 @@ function App() {
   const [best, setBest] = useState(() => { try { return Number(localStorage.getItem('tafheet-best') || 0) } catch { return 0 } })
   const [help, setHelp] = useState(false)
   const [showHowTo, setShowHowTo] = useState(() => !readHowToSeen())
+  const [steerMode, setSteerMode] = useState<SteerMode>(readSteerMode)
   const [leaderboard, setLeaderboard] = useState(readLeaderboard)
   const [showLeaderboard, setShowLeaderboard] = useState(false)
   const savedRun = useRef(-1)
@@ -318,6 +400,12 @@ function App() {
     try { localStorage.setItem(HOWTO_KEY, '1') } catch { /* still playable this session */ }
   }, [])
 
+  const chooseSteerMode = useCallback((mode: SteerMode) => {
+    clearInputs()
+    setSteerMode(mode)
+    try { localStorage.setItem(STEER_MODE_KEY, mode) } catch { /* preference still applies this session */ }
+  }, [])
+
   const start = () => {
     clearInputs()
     setStats(initialStats)
@@ -423,6 +511,7 @@ function App() {
               </div>
               <h1>أمسك<br /><em>الصينية.</em></h1>
               <p>دجاجة البيت على الطريق السريع.<br />درّف الداتسن بين المنعطفات. لا تسكب الطلب.</p>
+              <SteerModePicker value={steerMode} onChange={chooseSteerMode} />
               <button className="start" onClick={start}>يلا نهجول <span>↖</span></button>
               <div className="start-note">اقرأ المنعطفات. اربط الانزلاقات. وصّلها للبيت.</div>
             </section>
@@ -485,7 +574,7 @@ function App() {
       {showChrome && started && (
         <div className="touch-controls" onContextMenu={e => e.preventDefault()}>
           <div className="touch-steer">
-            <TouchSteeringWheel />
+            {steerMode === 'wheel' ? <TouchSteeringWheel /> : <TouchSteerButtons />}
           </div>
           <div className="touch-drive">
             <button
@@ -548,8 +637,9 @@ function App() {
               <li>سرّع، لف، واضغط فرامل اليد لكسر تماسك الخلف — بعدين وجّه عكس الانزلاق عشان تمسكه.</li>
               <li>الدرفت فوق ٣٦ كم/س على الأسفلت يجيب نقاط. اربط الانزلاقات خلال {CHAIN_WINDOW} ثوانٍ، وارفع المضاعف لـ ×٥.</li>
               <li>الخروج عن الأسفلت، لمس سيارة مرور، أو قطع سلسلة الدرفت ينهي الجولة. التجاوزات القريبة تعطي بونص.</li>
-              <li>على اللمس: عجلة اليسار، دواسات وفرامل يد على اليمين.</li>
+              <li>على اللمس: اختَر عجلة أو أزرار يمين/يسار على الشاشة الرئيسية. الدواسات وفرامل اليد على اليمين.</li>
             </ul>
+            <SteerModePicker value={steerMode} onChange={chooseSteerMode} />
             <button className="start" onClick={dismissHowTo}>تمام، يلا <span>↖</span></button>
           </section>
         </div>
@@ -566,7 +656,8 @@ function App() {
               <>
                 <p>اضغط W أو ↑ للتسارع. وجّه بـ A / D أو ← / →. اضغط Space وأنت تدور لكسر تماسك الخلف، ثم أفلتها ووجّه عكس الانزلاق عشان تمسكه. خفّف الدواسة إذا طاح الخلف زيادة.</p>
                 <p>الطريق يلتوي — اقرأ المنعطفات ودرّف فيها. الدرفت فوق ٣٦ كم/س على الأسفلت يجيب نقاط. الزاوية الثابتة ترفع المضاعف؛ الانزلاقات الضعيفة ما تحسب كثير. كل × يحتاج حوالي {COMBO_TIER_TIME} ثوانٍ درفت مستمر، يعني ×٥ يحتاج جولة طويلة مربوطة. عندك {CHAIN_WINDOW} ثانية تربط فيها الانزلاقة التالية. تغيير اتجاه الدرفت يعطي بونص. التجاوزات القريبة تعطي أكثر وأنت درفت. اضرب الدجاجات على الطريق لبونص — تنفجر والجولة تكمل. الخروج عن الأسفلت أو لمس أي سيارة مرور أو قطع سلسلة الدرفت ينهي الجولة.</p>
-                <p>على الشاشات اللمسية: لف عجلة القيادة على اليسار للدخول التدريجي، والدواسات وفرامل اليد على اليمين. استخدم ملء / طولي / عرضي للعرض. امسك البنزين ووجّه، اضغط فرامل اليد لحظة، ثم وجّه ضد الانزلاق عشان تمسكه.</p>
+                <p>على الشاشات اللمسية: اختَر عجلة أو أزرار يمين/يسار للتوجيه، والدواسات وفرامل اليد على اليمين. استخدم ملء / طولي / عرضي للعرض. امسك البنزين ووجّه، اضغط فرامل اليد لحظة، ثم وجّه ضد الانزلاق عشان تمسكه.</p>
+                <SteerModePicker value={steerMode} onChange={chooseSteerMode} />
                 <button className="start" onClick={() => setHelp(false)}>تمام <span>↖</span></button>
               </>
             ) : finished ? (
@@ -579,6 +670,7 @@ function App() {
             ) : (
               <>
                 <p>المطبخ يقدر يستنى.</p>
+                <SteerModePicker value={steerMode} onChange={chooseSteerMode} />
                 <button className="start" onClick={() => setPaused(false)}>كمّل سواقة <span>↖</span></button>
                 <button className="text-button" onClick={start}>أعد الجولة</button>
               </>
