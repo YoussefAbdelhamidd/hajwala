@@ -17,6 +17,8 @@ const STEER_HUB_RATIO = 0.18
 const GYRO_FULL_DEG = 28
 const GYRO_DEADZONE_DEG = 2.5
 const GYRO_SMOOTH = 0.28
+/** Motion gravity → degrees scale (used only as units; calibration zeros the rest). */
+const GYRO_MOTION_RAD2DEG = 180 / Math.PI
 const HOWTO_KEY = 'tafheet-howto-seen'
 const STEER_MODE_KEY = 'tafheet-steer-mode'
 const LOGO_URL = '/al-romansiah-logo.png?v=white1'
@@ -25,6 +27,9 @@ const MARK_URL = '/al-romansiah-mark.png?v=white1'
 type OrientationMode = 'auto' | 'portrait' | 'landscape'
 type SteerMode = 'wheel' | 'buttons' | 'gyro'
 type GyroPermission = 'granted' | 'denied' | 'unsupported'
+type MotionPermissionEvent = {
+  requestPermission?: () => Promise<'granted' | 'denied'>
+}
 
 function readHowToSeen() {
   try { return localStorage.getItem(HOWTO_KEY) === '1' } catch { return false }
@@ -38,6 +43,28 @@ function readSteerMode(): SteerMode {
   } catch {
     return 'wheel'
   }
+}
+
+function hasMotionSensors() {
+  return typeof window !== 'undefined' && ('DeviceOrientationEvent' in window || 'DeviceMotionEvent' in window)
+}
+
+/** Only Safari on iOS/iPadOS needs a real permission prompt. OEM stubs (Huawei etc.) must be ignored. */
+function isAppleMotionPermissionPlatform() {
+  if (typeof navigator === 'undefined') return false
+  const ua = navigator.userAgent || ''
+  if (/iPad|iPhone|iPod/.test(ua)) return true
+  // iPadOS desktop-class UA
+  return navigator.platform === 'MacIntel' && (navigator.maxTouchPoints ?? 0) > 1
+}
+
+function needsGyroPermissionPrompt() {
+  if (!isAppleMotionPermissionPlatform()) return false
+  const DOE = DeviceOrientationEvent as unknown as MotionPermissionEvent | undefined
+  const DME = typeof DeviceMotionEvent !== 'undefined'
+    ? (DeviceMotionEvent as unknown as MotionPermissionEvent)
+    : undefined
+  return typeof DOE?.requestPermission === 'function' || typeof DME?.requestPermission === 'function'
 }
 
 function screenOrientationAngle() {
@@ -58,6 +85,23 @@ function tiltFromOrientation(e: DeviceOrientationEvent): number | null {
   return e.gamma
 }
 
+/**
+ * Fallback for OEMs (incl. many Huawei builds) that never deliver orientation
+ * angles but do deliver accelerationIncludingGravity.
+ */
+function tiltFromMotion(e: DeviceMotionEvent): number | null {
+  const a = e.accelerationIncludingGravity
+  if (!a || a.x == null || a.y == null) return null
+  const angle = screenOrientationAngle()
+  const { x, y } = a
+  let rad: number
+  if (angle >= 45 && angle < 135) rad = Math.atan2(-y, -x)
+  else if (angle >= 225 && angle < 315) rad = Math.atan2(y, x)
+  else if (angle >= 135 && angle < 225) rad = Math.atan2(-x, y)
+  else rad = Math.atan2(x, y)
+  return rad * GYRO_MOTION_RAD2DEG
+}
+
 /** +1 left … −1 right, matching keyboard A − D and the touch wheel. */
 function steerFromTilt(tiltDeg: number, centerDeg: number) {
   const delta = tiltDeg - centerDeg
@@ -66,26 +110,55 @@ function steerFromTilt(tiltDeg: number, centerDeg: number) {
   return Math.max(-1, Math.min(1, (-Math.sign(delta) * excess) / GYRO_FULL_DEG))
 }
 
+function withTimeout<T>(promise: Promise<T>, ms: number, fallback: T): Promise<T> {
+  return new Promise(resolve => {
+    const id = window.setTimeout(() => resolve(fallback), ms)
+    promise.then(
+      value => { window.clearTimeout(id); resolve(value) },
+      () => { window.clearTimeout(id); resolve(fallback) },
+    )
+  })
+}
+
 /** Survives remounts so the in-run panel can skip a second iOS prompt. */
 let gyroPermissionGranted = false
 
 async function requestGyroPermission(): Promise<GyroPermission> {
-  if (typeof window === 'undefined' || !('DeviceOrientationEvent' in window)) return 'unsupported'
-  const DOE = DeviceOrientationEvent as typeof DeviceOrientationEvent & {
-    requestPermission?: () => Promise<'granted' | 'denied'>
+  if (!hasMotionSensors()) return 'unsupported'
+  // Android / Huawei / Chrome: never call stub requestPermission — it denies or hangs.
+  if (!needsGyroPermissionPrompt()) {
+    gyroPermissionGranted = true
+    return 'granted'
   }
-  if (typeof DOE.requestPermission === 'function') {
-    try {
-      const result = (await DOE.requestPermission()) === 'granted' ? 'granted' : 'denied'
-      gyroPermissionGranted = result === 'granted'
-      return result
-    } catch {
-      gyroPermissionGranted = false
-      return 'denied'
+
+  try {
+    const DOE = DeviceOrientationEvent as unknown as MotionPermissionEvent
+    const DME = typeof DeviceMotionEvent !== 'undefined'
+      ? (DeviceMotionEvent as unknown as MotionPermissionEvent)
+      : undefined
+
+    const tasks: Promise<'granted' | 'denied'>[] = []
+    if (typeof DOE.requestPermission === 'function') {
+      tasks.push(withTimeout(DOE.requestPermission(), 2500, 'denied'))
     }
+    if (typeof DME?.requestPermission === 'function') {
+      tasks.push(withTimeout(DME.requestPermission(), 2500, 'denied'))
+    }
+
+    if (tasks.length === 0) {
+      gyroPermissionGranted = true
+      return 'granted'
+    }
+
+    const results = await Promise.all(tasks)
+    const ok = results.some(result => result === 'granted')
+    gyroPermissionGranted = ok
+    return ok ? 'granted' : 'denied'
+  } catch {
+    // Treat broken permission APIs as granted and let sensor listeners decide.
+    gyroPermissionGranted = true
+    return 'granted'
   }
-  gyroPermissionGranted = true
-  return 'granted'
 }
 
 function unwrapDelta(from: number, to: number) {
@@ -223,13 +296,9 @@ function TouchSteerButtons() {
 }
 
 function initialGyroStatus(): 'active' | 'denied' | 'unsupported' {
-  if (typeof window === 'undefined' || !('DeviceOrientationEvent' in window)) return 'unsupported'
-  const DOE = DeviceOrientationEvent as typeof DeviceOrientationEvent & {
-    requestPermission?: () => Promise<'granted' | 'denied'>
-  }
-  if (typeof DOE.requestPermission === 'function') {
-    return gyroPermissionGranted ? 'active' : 'denied'
-  }
+  if (!hasMotionSensors()) return 'unsupported'
+  // Only Apple needs an explicit grant before listeners are useful.
+  if (needsGyroPermissionPrompt() && !gyroPermissionGranted) return 'denied'
   return 'active'
 }
 
@@ -237,7 +306,9 @@ function TouchGyroSteer() {
   const needleRef = useRef<HTMLSpanElement>(null)
   const centerRef = useRef<number | null>(null)
   const smoothRef = useRef(0)
+  const gotOrientationRef = useRef(false)
   const [status, setStatus] = useState<'active' | 'denied' | 'unsupported'>(initialGyroStatus)
+  const [busy, setBusy] = useState(false)
   const [ariaSteer, setAriaSteer] = useState(0)
 
   const applySteer = useCallback((value: number) => {
@@ -247,6 +318,14 @@ function TouchGyroSteer() {
     setAriaSteer(next)
   }, [])
 
+  const ingestTilt = useCallback((tilt: number) => {
+    if (centerRef.current == null) centerRef.current = tilt
+    const target = steerFromTilt(tilt, centerRef.current)
+    smoothRef.current += (target - smoothRef.current) * GYRO_SMOOTH
+    if (Math.abs(smoothRef.current) < 0.01 && Math.abs(target) < 0.01) smoothRef.current = 0
+    applySteer(smoothRef.current)
+  }, [applySteer])
+
   const calibrate = useCallback(() => {
     centerRef.current = null
     smoothRef.current = 0
@@ -254,17 +333,21 @@ function TouchGyroSteer() {
   }, [applySteer])
 
   const enable = useCallback(async () => {
-    const permission = await requestGyroPermission()
-    if (permission === 'unsupported') {
-      setStatus('unsupported')
-      return
+    setBusy(true)
+    try {
+      const permission = await requestGyroPermission()
+      // On non-Apple (and on broken stubs), always start listening after a tap —
+      // some WebViews only unlock sensors after a gesture.
+      if (permission === 'unsupported') {
+        setStatus('unsupported')
+        return
+      }
+      gyroPermissionGranted = true
+      setStatus('active')
+      calibrate()
+    } finally {
+      setBusy(false)
     }
-    if (permission === 'denied') {
-      setStatus('denied')
-      return
-    }
-    setStatus('active')
-    calibrate()
   }, [calibrate])
 
   useEffect(() => {
@@ -273,22 +356,35 @@ function TouchGyroSteer() {
       return
     }
 
-    const onOrient = (e: DeviceOrientationEvent) => {
-      const tilt = tiltFromOrientation(e)
+    gotOrientationRef.current = false
+
+    const onOrient = (e: Event) => {
+      const tilt = tiltFromOrientation(e as DeviceOrientationEvent)
       if (tilt == null) return
-      if (centerRef.current == null) centerRef.current = tilt
-      const target = steerFromTilt(tilt, centerRef.current)
-      smoothRef.current += (target - smoothRef.current) * GYRO_SMOOTH
-      if (Math.abs(smoothRef.current) < 0.01 && Math.abs(target) < 0.01) smoothRef.current = 0
-      applySteer(smoothRef.current)
+      gotOrientationRef.current = true
+      ingestTilt(tilt)
+    }
+
+    const onMotion = (e: DeviceMotionEvent) => {
+      // Prefer orientation angles when they work; many Huawei phones only get motion.
+      if (gotOrientationRef.current) return
+      const tilt = tiltFromMotion(e)
+      if (tilt == null) return
+      ingestTilt(tilt)
     }
 
     window.addEventListener('deviceorientation', onOrient)
+    // Absolute variant used by some Android / OEM browsers.
+    window.addEventListener('deviceorientationabsolute', onOrient)
+    window.addEventListener('devicemotion', onMotion)
+
     return () => {
       window.removeEventListener('deviceorientation', onOrient)
+      window.removeEventListener('deviceorientationabsolute', onOrient)
+      window.removeEventListener('devicemotion', onMotion)
       applySteer(0)
     }
-  }, [status, applySteer])
+  }, [status, applySteer, ingestTilt])
 
   if (status === 'unsupported') {
     return (
@@ -301,8 +397,13 @@ function TouchGyroSteer() {
   if (status === 'denied') {
     return (
       <div className="touch-gyro">
-        <button type="button" className="touch-btn touch-gyro-enable" onClick={enable}>
-          فعّل الجيروسكوب
+        <button
+          type="button"
+          className="touch-btn touch-gyro-enable"
+          disabled={busy}
+          onClick={enable}
+        >
+          {busy ? 'جاري التفعيل…' : 'فعّل الجيروسكوب'}
         </button>
       </div>
     )
