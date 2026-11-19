@@ -12,14 +12,22 @@ const ASSET_URLS = [
   `${MASCOT_ROOT}/texture_diffuse.png`,
   `${RESTAURANT_ROOT}/base.obj`,
   `${RESTAURANT_ROOT}/texture_diffuse.jpg`,
-  '/al-romansiah-logo.png?v=white1',
-  '/al-romansiah-mark.png?v=white1',
 ]
+
+export type BootLabelKey =
+  | 'boot.tray'
+  | 'boot.car'
+  | 'boot.towers'
+  | 'boot.chicken'
+  | 'boot.kitchen'
+  | 'boot.table'
+  | 'boot.road'
+  | 'boot.almost'
 
 export type BootProgress = {
   /** 0–1 overall boot progress */
   ratio: number
-  label: string
+  label: BootLabelKey
 }
 
 function fetchAsset(url: string) {
@@ -39,28 +47,28 @@ export async function preloadBootAssets(
   const total = ASSET_URLS.length + 1
   let finished = 0
 
-  const tick = (label: string) => {
+  const tick = (label: BootLabelKey) => {
     finished += 1
     onProgress({ ratio: Math.min(0.92, finished / total), label })
   }
 
-  onProgress({ ratio: 0.04, label: 'نجهّز الصينية…' })
+  onProgress({ ratio: 0.04, label: 'boot.tray' })
 
   await Promise.all(
     ASSET_URLS.map(url =>
       fetchAsset(url)
         .catch(() => fetch(url).then(r => r.arrayBuffer()))
         .then(() => {
-          if (url.includes('nissan')) tick('نركن الداتسن…')
-          else if (url.includes('tower')) tick('نرفع الأبراج…')
-          else if (url.includes('57dc3d0f')) tick('نستدعي الدجاجة…')
-          else if (url.includes('restaurant')) tick('نفتح المطبخ…')
-          else tick('نرتّب الطاولة…')
+          if (url.includes('nissan')) tick('boot.car')
+          else if (url.includes('tower')) tick('boot.towers')
+          else if (url.includes('57dc3d0f')) tick('boot.chicken')
+          else if (url.includes('restaurant')) tick('boot.kitchen')
+          else tick('boot.table')
         }),
     ),
   )
 
-  onProgress({ ratio: 0.88, label: 'نضيء الطريق…' })
+  onProgress({ ratio: 0.88, label: 'boot.road' })
   await import('./GameScene')
-  onProgress({ ratio: 0.94, label: 'تقريباً جاهز…' })
+  onProgress({ ratio: 0.94, label: 'boot.almost' })
 }

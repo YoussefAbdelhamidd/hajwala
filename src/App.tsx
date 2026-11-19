@@ -1,10 +1,21 @@
 import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
 import './App.css'
 import { preloadBootAssets } from './bootAssets'
-import { CHAIN_WINDOW, COMBO_TIER_TIME, readLeaderboard, rankRun, LEADERBOARD_KEY } from './gameplay'
+import type { BootLabelKey } from './bootAssets'
+import {
+  gameplayStart,
+  gameplayStop,
+  happytime,
+  initCrazyGames,
+  loadingStart,
+  loadingStop,
+  requestMidgameAd,
+} from './crazyGames'
+import { CHAIN_WINDOW, readLeaderboard, rankRun, LEADERBOARD_KEY } from './gameplay'
 import type { LeaderboardEntry } from './gameplay'
-import { clearInputs, detectGraphicsQuality, initialStats, keys, steerAxis } from './gameUi'
+import { clearInputs, detectGraphicsQuality, detectTouchPlay, initialStats, keys, steerAxis } from './gameUi'
 import type { Stats } from './gameUi'
+import { useI18n, type MessageKey } from './i18n'
 
 const GameScene = lazy(() => import('./GameScene'))
 
@@ -21,8 +32,6 @@ const GYRO_SMOOTH = 0.28
 const GYRO_MOTION_RAD2DEG = 180 / Math.PI
 const HOWTO_KEY = 'tafheet-howto-seen'
 const STEER_MODE_KEY = 'tafheet-steer-mode'
-const LOGO_URL = '/al-romansiah-logo.png?v=white1'
-const MARK_URL = '/al-romansiah-mark.png?v=white1'
 
 type OrientationMode = 'auto' | 'portrait' | 'landscape'
 type SteerMode = 'wheel' | 'buttons' | 'gyro'
@@ -169,6 +178,7 @@ function unwrapDelta(from: number, to: number) {
 }
 
 function TouchSteeringWheel() {
+  const { t } = useI18n()
   const padRef = useRef<HTMLDivElement>(null)
   const artRef = useRef<HTMLSpanElement>(null)
   const [held, setHeld] = useState(false)
@@ -214,11 +224,17 @@ function TouchSteeringWheel() {
       ref={padRef}
       className={`touch-steer-pad${held ? ' is-held' : ''}`}
       role="slider"
-      aria-label="عجلة القيادة"
+      aria-label={t('touch.wheel')}
       aria-valuemin={-100}
       aria-valuemax={100}
       aria-valuenow={Math.round(ariaSteer * 100)}
-      aria-valuetext={ariaSteer === 0 ? 'مستقيم' : ariaSteer > 0 ? `يسار ${Math.round(ariaSteer * 100)}٪` : `يمين ${Math.round(-ariaSteer * 100)}٪`}
+      aria-valuetext={
+        ariaSteer === 0
+          ? t('touch.straight')
+          : ariaSteer > 0
+            ? t('touch.leftPct', { n: Math.round(ariaSteer * 100) })
+            : t('touch.rightPct', { n: Math.round(-ariaSteer * 100) })
+      }
       onContextMenu={e => e.preventDefault()}
       onPointerDown={e => {
         e.preventDefault()
@@ -271,12 +287,13 @@ function holdKeyHandlers(code: 'KeyA' | 'KeyD') {
 }
 
 function TouchSteerButtons() {
+  const { t } = useI18n()
   return (
-    <div className="touch-steer-buttons" role="group" aria-label="توجيه">
+    <div className="touch-steer-buttons" role="group" aria-label={t('touch.steer')}>
       <button
         type="button"
         className="touch-btn touch-turn touch-turn-left"
-        aria-label="يسار"
+        aria-label={t('touch.left')}
         onContextMenu={e => e.preventDefault()}
         {...holdKeyHandlers('KeyA')}
       >
@@ -285,7 +302,7 @@ function TouchSteerButtons() {
       <button
         type="button"
         className="touch-btn touch-turn touch-turn-right"
-        aria-label="يمين"
+        aria-label={t('touch.right')}
         onContextMenu={e => e.preventDefault()}
         {...holdKeyHandlers('KeyD')}
       >
@@ -303,6 +320,7 @@ function initialGyroStatus(): 'active' | 'denied' | 'unsupported' {
 }
 
 function TouchGyroSteer() {
+  const { t } = useI18n()
   const needleRef = useRef<HTMLSpanElement>(null)
   const centerRef = useRef<number | null>(null)
   const smoothRef = useRef(0)
@@ -389,7 +407,7 @@ function TouchGyroSteer() {
   if (status === 'unsupported') {
     return (
       <div className="touch-gyro touch-gyro-msg" role="status">
-        الجهاز ما يدعم الجيروسكوب
+        {t('touch.gyroUnsupported')}
       </div>
     )
   }
@@ -403,7 +421,7 @@ function TouchGyroSteer() {
           disabled={busy}
           onClick={enable}
         >
-          {busy ? 'جاري التفعيل…' : 'فعّل الجيروسكوب'}
+          {busy ? t('touch.gyroEnabling') : t('touch.gyroEnable')}
         </button>
       </div>
     )
@@ -413,21 +431,27 @@ function TouchGyroSteer() {
     <div
       className="touch-gyro"
       role="slider"
-      aria-label="توجيه بالجيرو"
+      aria-label={t('touch.gyroLabel')}
       aria-valuemin={-100}
       aria-valuemax={100}
       aria-valuenow={Math.round(ariaSteer * 100)}
-      aria-valuetext={ariaSteer === 0 ? 'مستقيم' : ariaSteer > 0 ? `يسار ${Math.round(ariaSteer * 100)}٪` : `يمين ${Math.round(-ariaSteer * 100)}٪`}
+      aria-valuetext={
+        ariaSteer === 0
+          ? t('touch.straight')
+          : ariaSteer > 0
+            ? t('touch.leftPct', { n: Math.round(ariaSteer * 100) })
+            : t('touch.rightPct', { n: Math.round(-ariaSteer * 100) })
+      }
     >
       <div className="touch-gyro-meter" aria-hidden="true">
         <i className="touch-gyro-track" />
         <span ref={needleRef} className="touch-gyro-needle" />
         <i className="touch-gyro-center" />
       </div>
-      <button type="button" className="touch-btn touch-gyro-cal" onClick={calibrate} aria-label="معايرة الجيروسكوب">
-        عاير
+      <button type="button" className="touch-btn touch-gyro-cal" onClick={calibrate} aria-label={t('touch.calibrateAria')}>
+        {t('touch.calibrate')}
       </button>
-      <span className="touch-gyro-hint">ميل الجهاز</span>
+      <span className="touch-gyro-hint">{t('touch.tiltHint')}</span>
     </div>
   )
 }
@@ -439,9 +463,10 @@ function SteerModePicker({
   value: SteerMode
   onChange: (mode: SteerMode) => void
 }) {
+  const { t } = useI18n()
   return (
-    <div className="steer-mode" role="group" aria-label="طريقة التوجيه">
-      <span className="steer-mode-label">التوجيه</span>
+    <div className="steer-mode" role="group" aria-label={t('steer.group')}>
+      <span className="steer-mode-label">{t('steer.label')}</span>
       <div className="steer-mode-options">
         <button
           type="button"
@@ -449,7 +474,7 @@ function SteerModePicker({
           aria-pressed={value === 'wheel'}
           onClick={() => onChange('wheel')}
         >
-          عجلة
+          {t('steer.wheel')}
         </button>
         <button
           type="button"
@@ -457,7 +482,7 @@ function SteerModePicker({
           aria-pressed={value === 'buttons'}
           onClick={() => onChange('buttons')}
         >
-          أزرار
+          {t('steer.buttons')}
         </button>
         <button
           type="button"
@@ -465,7 +490,7 @@ function SteerModePicker({
           aria-pressed={value === 'gyro'}
           onClick={() => onChange('gyro')}
         >
-          جيرو
+          {t('steer.gyro')}
         </button>
       </div>
     </div>
@@ -473,29 +498,42 @@ function SteerModePicker({
 }
 
 function App() {
+  const { locale, dir, setLocale, t, formatEvent } = useI18n()
   const [stats, setStats] = useState(initialStats)
   const [started, setStarted] = useState(false)
   const [paused, setPaused] = useState(false)
   const [runId, setRunId] = useState(0)
   const [best, setBest] = useState(() => { try { return Number(localStorage.getItem('tafheet-best') || 0) } catch { return 0 } })
   const [help, setHelp] = useState(false)
-  const [showHowTo, setShowHowTo] = useState(() => !readHowToSeen())
+  const [showHowTo, setShowHowTo] = useState(false)
+  const [coach, setCoach] = useState(false)
   const [steerMode, setSteerMode] = useState<SteerMode>(readSteerMode)
   const [leaderboard, setLeaderboard] = useState(readLeaderboard)
   const [showLeaderboard, setShowLeaderboard] = useState(false)
+  const [adBusy, setAdBusy] = useState(false)
   const savedRun = useRef(-1)
+  const happyPending = useRef(false)
+  const finishAdDone = useRef(new Set<number>())
   const touchControlsRef = useRef<HTMLDivElement>(null)
   const [crashReveal, setCrashReveal] = useState(false)
   const quality = useMemo(() => detectGraphicsQuality(), [])
+  const [isTouch, setIsTouch] = useState(() => detectTouchPlay())
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [orientation, setOrientation] = useState<OrientationMode>('auto')
-  const [boot, setBoot] = useState({
+  const [boot, setBoot] = useState<{
+    visible: boolean
+    fading: boolean
+    mountScene: boolean
+    sceneReady: boolean
+    ratio: number
+    label: MessageKey
+  }>({
     visible: true,
     fading: false,
     mountScene: false,
     sceneReady: false,
     ratio: 0.02,
-    label: 'نسخّن الطريق السريع…',
+    label: 'boot.warming',
   })
   const bootStartedAt = useRef(performance.now())
   const bootDone = useRef(false)
@@ -513,7 +551,10 @@ function App() {
 
   const reportStats = useCallback((next: Stats) => {
     setStats(next)
-    setBest(previous => Math.max(previous, next.score))
+    setBest(previous => {
+      if (next.crashed && next.score > previous) happyPending.current = true
+      return Math.max(previous, next.score)
+    })
     if (next.crashed && savedRun.current !== runId) {
       savedRun.current = runId
       const entry: LeaderboardEntry = {
@@ -579,46 +620,43 @@ function App() {
   useEffect(() => {
     let cancelled = false
     bootStartedAt.current = performance.now()
-    preloadBootAssets(progress => {
+    ;(async () => {
+      // Kick asset fetch immediately; init SDK in parallel so Chrome hits playable faster.
+      const assets = preloadBootAssets(progress => {
+        if (cancelled) return
+        setBoot(prev => ({
+          ...prev,
+          ratio: Math.max(prev.ratio, progress.ratio * 0.9),
+          label: progress.label as BootLabelKey,
+        }))
+      }).catch(() => { /* Suspense / AssetGate still finishes the wait. */ })
+
+      await initCrazyGames()
+      if (cancelled) return
+      loadingStart()
+      await assets
       if (cancelled) return
       setBoot(prev => ({
         ...prev,
-        ratio: Math.max(prev.ratio, progress.ratio),
-        label: progress.label,
+        mountScene: true,
+        ratio: Math.max(prev.ratio, 0.95),
+        label: 'boot.asphalt',
       }))
-    })
-      .then(() => {
-        if (cancelled) return
-        setBoot(prev => ({
-          ...prev,
-          mountScene: true,
-          ratio: Math.max(prev.ratio, 0.95),
-          label: 'نطلع على الأسفلت…',
-        }))
-      })
-      .catch(() => {
-        if (cancelled) return
-        // Still mount the scene — Suspense / AssetGate will finish the wait.
-        setBoot(prev => ({
-          ...prev,
-          mountScene: true,
-          ratio: Math.max(prev.ratio, 0.9),
-          label: 'نطلع على الأسفلت…',
-        }))
-      })
+    })()
     return () => { cancelled = true }
   }, [])
 
   const finishBoot = useCallback(() => {
     if (bootDone.current) return
     bootDone.current = true
-    const minMs = 900
+    const minMs = 350
     const wait = Math.max(0, minMs - (performance.now() - bootStartedAt.current))
     window.setTimeout(() => {
-      setBoot(prev => ({ ...prev, ratio: 1, label: 'جاهز.', fading: true }))
+      setBoot(prev => ({ ...prev, ratio: 1, label: 'boot.ready', fading: true }))
       window.setTimeout(() => {
+        loadingStop()
         setBoot(prev => ({ ...prev, visible: false, fading: false }))
-      }, 480)
+      }, 280)
     }, wait)
   }, [])
 
@@ -627,7 +665,7 @@ function App() {
       ...prev,
       sceneReady: true,
       ratio: 1,
-      label: 'جاهز.',
+      label: 'boot.ready',
     }))
   }, [])
 
@@ -690,10 +728,14 @@ function App() {
     }
   }, [isFullscreen, orientation, lockOrientation])
 
-  const dismissHowTo = useCallback(() => {
-    setShowHowTo(false)
+  const markHowToSeen = useCallback(() => {
     try { localStorage.setItem(HOWTO_KEY, '1') } catch { /* still playable this session */ }
   }, [])
+
+  const dismissHowTo = useCallback(() => {
+    setShowHowTo(false)
+    markHowToSeen()
+  }, [markHowToSeen])
 
   const chooseSteerMode = useCallback(async (mode: SteerMode) => {
     clearInputs()
@@ -705,20 +747,76 @@ function App() {
 
   const start = () => {
     clearInputs()
+    happyPending.current = false
     setStats(initialStats)
     setRunId(v => v + 1)
     setStarted(true)
     setPaused(false)
     setShowLeaderboard(false)
     setShowHowTo(false)
+    setHelp(false)
+    // Play-first onboarding: short coach tips instead of a blocking howto wall.
+    if (!readHowToSeen()) setCoach(true)
   }
 
+  useEffect(() => {
+    const syncTouch = () => setIsTouch(detectTouchPlay())
+    const coarse = window.matchMedia('(pointer: coarse)')
+    const hover = window.matchMedia('(hover: none)')
+    coarse.addEventListener?.('change', syncTouch)
+    hover.addEventListener?.('change', syncTouch)
+    syncTouch()
+    return () => {
+      coarse.removeEventListener?.('change', syncTouch)
+      hover.removeEventListener?.('change', syncTouch)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!coach || !started || paused || stats.crashed) return
+    const id = window.setTimeout(() => {
+      setCoach(false)
+      markHowToSeen()
+    }, 5500)
+    return () => window.clearTimeout(id)
+  }, [coach, started, paused, stats.crashed, markHowToSeen])
+
   // Keep the highway/car visible on the entry screen; only simulate once the run starts.
-  const running = started && !paused && !help && !showHowTo && !showLeaderboard && !(started && stats.crashed)
+  const running = started && !paused && !help && !showHowTo && !showLeaderboard && !adBusy && !(started && stats.crashed)
   const showChrome = !boot.visible
 
+  useEffect(() => {
+    if (!started) return
+    if (running) gameplayStart()
+    else gameplayStop()
+  }, [started, running])
+
+  useEffect(() => {
+    if (!finished) return
+    if (finishAdDone.current.has(runId)) return
+    let cancelled = false
+    ;(async () => {
+      await requestMidgameAd({
+        onStart: () => { if (!cancelled) setAdBusy(true) },
+        onEnd: () => { if (!cancelled) setAdBusy(false) },
+      })
+      if (cancelled) return
+      finishAdDone.current.add(runId)
+      if (happyPending.current) {
+        happyPending.current = false
+        happytime()
+      }
+    })()
+    return () => { cancelled = true }
+  }, [finished, runId])
+
   return (
-    <main className={`game orient-${orientation}${isFullscreen ? ' is-fullscreen' : ''}${started ? ' is-playing' : ' is-idle'}`}>
+    <main
+      className={`game orient-${orientation}${isFullscreen ? ' is-fullscreen' : ''}${started ? ' is-playing' : ' is-idle'}${isTouch ? ' is-touch' : ' is-desktop'}`}
+      dir={dir}
+      lang={locale}
+      data-input={isTouch ? 'touch' : 'desktop'}
+    >
       {boot.mountScene && (
         <Suspense fallback={null}>
           <GameScene
@@ -735,14 +833,13 @@ function App() {
       {boot.visible && (
         <div className={`boot-screen${boot.fading ? ' boot-screen-out' : ''}`} role="status" aria-live="polite" aria-busy={!boot.fading}>
           <div className="boot-card">
-            <img className="boot-logo" src={LOGO_URL} alt="الرومانسية" width={200} height={56} />
-            <p className="boot-eyebrow">الرومانسية · الرياض</p>
-            <h1 className="boot-title">أمسك<br /><em>الصينية.</em></h1>
-            <p className="boot-label">{boot.label}</p>
+            <p className="boot-eyebrow">{t('boot.eyebrow')}</p>
+            <h1 className="boot-title">{t('boot.title.hold')}<br /><em>{t('boot.title.tray')}</em></h1>
+            <p className="boot-label">{t(boot.label)}</p>
             <div className="boot-track" aria-hidden="true">
               <div className="boot-fill" style={{ transform: `scaleX(${Math.max(0.04, boot.ratio)})` }} />
             </div>
-            <span className="boot-percent">{Math.round(boot.ratio * 100)}٪</span>
+            <span className="boot-percent" dir="ltr">{Math.round(boot.ratio * 100)}%</span>
           </div>
         </div>
       )}
@@ -750,67 +847,73 @@ function App() {
       {showChrome && (
         <>
           <header>
-            <a className="brand" href="/" aria-label="الرومانسية — الصفحة الرئيسية">
-              <img className="brand-logo" src={LOGO_URL} alt="الرومانسية" width={180} height={50} />
-              <span className="brand-tag">الدجاجة تركب</span>
+            <a className="brand" href="/" aria-label={t('brand.home')}>
+              <span className="brand-title">{t('brand.name')}</span>
+              <span className="brand-tag">{t('brand.tag')}</span>
             </a>
             <div className="location">
-              <span className="dot" /> الرياض · الرومانسية
+              <span className="dot" /> {t('loc.riyadhDrift')}
               <span className="coordinates" dir="ltr">24°43′ N &nbsp; 46°40′ E</span>
             </div>
-            <div className="mobile-display" role="group" aria-label="خيارات العرض">
+            <div className="mobile-display" role="group" aria-label={t('display.options')}>
               <button
                 type="button"
                 className={`chip-button${isFullscreen ? ' is-on' : ''}`}
                 onClick={toggleFullscreen}
                 aria-pressed={isFullscreen}
-                aria-label={isFullscreen ? 'الخروج من ملء الشاشة' : 'ملء الشاشة'}
-              >{isFullscreen ? 'خروج' : 'ملء'}</button>
+                aria-label={isFullscreen ? t('display.exitFs') : t('display.enterFs')}
+              >{isFullscreen ? t('display.exit') : t('display.full')}</button>
               <button
                 type="button"
                 className={`chip-button${orientation === 'portrait' ? ' is-on' : ''}`}
                 onClick={() => chooseOrientation(orientation === 'portrait' ? 'auto' : 'portrait')}
                 aria-pressed={orientation === 'portrait'}
-                aria-label="وضع عمودي"
-              >طولي</button>
+                aria-label={t('display.portrait')}
+              >{t('display.portraitShort')}</button>
               <button
                 type="button"
                 className={`chip-button${orientation === 'landscape' ? ' is-on' : ''}`}
                 onClick={() => chooseOrientation(orientation === 'landscape' ? 'auto' : 'landscape')}
                 aria-pressed={orientation === 'landscape'}
-                aria-label="وضع أفقي"
-              >عرضي</button>
+                aria-label={t('display.landscape')}
+              >{t('display.landscapeShort')}</button>
             </div>
-            <button className="icon-button" onClick={() => setShowLeaderboard(v => !v)} aria-label="المتصدرون المحليون">♛</button>
+            <button
+              type="button"
+              className="chip-button lang-chip"
+              onClick={() => setLocale(locale === 'ar' ? 'en' : 'ar')}
+              aria-label={t('nav.lang')}
+            >{locale === 'ar' ? 'EN' : 'ع'}</button>
+            <button className="icon-button" onClick={() => setShowLeaderboard(v => !v)} aria-label={t('nav.leaderboard')} disabled={adBusy}>♛</button>
             <button
               className="icon-button"
               onClick={() => {
-                if (showHowTo) dismissHowTo()
-                setHelp(v => !v)
+                setHelp(false)
+                setShowHowTo(v => !v)
               }}
-              aria-label="طريقة اللعب"
-            >؟</button>
+              aria-label={t('nav.howto')}
+              disabled={adBusy}
+            >?</button>
             {started && (
-              <button className="icon-button" onClick={() => setPaused(v => !v)} aria-label={paused ? 'متابعة' : 'إيقاف'}>
+              <button className="icon-button" onClick={() => setPaused(v => !v)} aria-label={paused ? t('nav.resume') : t('nav.pause')} disabled={adBusy}>
                 {paused ? '▷' : 'Ⅱ'}
               </button>
             )}
           </header>
           <div className="topline">
-            <span>جولة بلا نهاية <i /> طريق الصينية</span>
-            <span className="arabic">الرومانسية على الخط</span>
+            <span>{t('topline.left')}</span>
+            <span className="arabic">{t('topline.right')}</span>
           </div>
           {!started && (
             <section className="intro">
               <div className="eyebrow">
-                <img src={MARK_URL} alt="" width={22} height={22} />
-                <span>الرومانسية · الرياض</span>
+                <span>{t('intro.eyebrow')}</span>
               </div>
-              <h1>أمسك<br /><em>الصينية.</em></h1>
-              <p>دجاجة البيت على الطريق السريع.<br />درّف الداتسن بين المنعطفات. لا تسكب الطلب.</p>
-              <SteerModePicker value={steerMode} onChange={chooseSteerMode} />
-              <button className="start" onClick={start}>يلا نهجول <span>↖</span></button>
-              <div className="start-note">اقرأ المنعطفات. اربط الانزلاقات. وصّلها للبيت.</div>
+              <h1>{t('boot.title.hold')}<br /><em>{t('boot.title.tray')}</em></h1>
+              <p>{t('intro.body')}</p>
+              {isTouch && <SteerModePicker value={steerMode} onChange={chooseSteerMode} />}
+              <button className="start" onClick={start} disabled={adBusy}>{t('intro.start')} <span>↖</span></button>
+              <div className="start-note">{isTouch ? t('intro.noteMobile') : t('intro.noteDesktop')}</div>
             </section>
           )}
         </>
@@ -818,24 +921,29 @@ function App() {
       {showChrome && started && (
         <>
           <div className="score-panel">
-            <span className="label">نقاط الجولة</span>
+            <span className="label">{t('hud.score')}</span>
             <strong dir="ltr">{stats.score.toLocaleString('en-US').padStart(6, '0')}</strong>
-            <span className="best">أفضل رقم &nbsp; <span dir="ltr">{best.toLocaleString('en-US')}</span></span>
+            <span className="best">{t('hud.best')} &nbsp; <span dir="ltr">{best.toLocaleString('en-US')}</span></span>
           </div>
           <div className="timer">
-            <span className="label">المسافة</span>
-            <strong dir="ltr">{(stats.distance / 1000).toFixed(2)} <small>كم</small></strong>
-            <span className="label">أطول سلسلة ×{stats.longestCombo}</span>
+            <span className="label">{t('hud.distance')}</span>
+            <strong dir="ltr">{(stats.distance / 1000).toFixed(2)} <small>{t('hud.km')}</small></strong>
+            <span className="label">{t('hud.longest')} ×{stats.longestCombo}</span>
           </div>
           {stats.grace > 0 && !paused && !finished && (
             <div className="drift-callout">
-              <span>{stats.drift ? 'خلّها جانبية' : 'اربط الانزلاقة التالية'}</span>
-              <strong>{stats.drift ? 'درفت' : 'السلسلة حيّة'} <em dir="ltr">×{stats.combo}</em></strong>
-              <div className="combo-bar" style={{ transform: `scaleX(${stats.grace / CHAIN_WINDOW})`, transformOrigin: 'right' }} />
+              <span>{stats.drift ? t('hud.keepSideways') : t('hud.linkNext')}</span>
+              <strong>{stats.drift ? t('hud.drifting') : t('hud.chainLive')} <em dir="ltr">×{stats.combo}</em></strong>
+              <div className="combo-bar" style={{ transform: `scaleX(${stats.grace / CHAIN_WINDOW})`, transformOrigin: dir === 'rtl' ? 'right' : 'left' }} />
             </div>
           )}
-          {stats.event && !paused && <div className="run-event" role="status">{stats.event}</div>}
-          {stats.offroad && <div className="offroad">خارج الطريق · انتهت الجولة</div>}
+          {stats.event && !paused && <div className="run-event" role="status">{formatEvent(stats.event)}</div>}
+          {stats.offroad && <div className="offroad">{t('hud.offroad')}</div>}
+          {coach && !paused && !finished && (
+            <div className="coach" role="status">
+              <p>{isTouch ? t('coach.mobile') : t('coach.desktop')}</p>
+            </div>
+          )}
         </>
       )}
       {showChrome && (
@@ -843,32 +951,32 @@ function App() {
           <div className="bottom-meta">
             <div className="route-icon">↖</div>
             <div>
-              <strong>من المطبخ</strong>
-              <span>صينية واحدة. الطريق كله.</span>
+              <strong>{t('meta.fromKitchen')}</strong>
+              <span>{t('meta.oneTray')}</span>
             </div>
           </div>
           <div className="speedometer">
-            <div className="speed-top"><span>داتسن</span><span dir="ltr">2014 / RWD</span></div>
-            <div className="speed-value" dir="ltr">{Math.round(stats.speed).toString().padStart(3, '0')}<span>كم/س</span></div>
+            <div className="speed-top"><span>{t('speed.car')}</span><span dir="ltr">2014 / RWD</span></div>
+            <div className="speed-value" dir="ltr">{Math.round(stats.speed).toString().padStart(3, '0')}<span>{t('speed.unit')}</span></div>
             <div className="speed-bars">{Array.from({ length: 24 }, (_, i) => <i key={i} className={i < stats.speed / 225 * 24 ? 'lit' : ''} />)}</div>
             <div className="speed-bottom">
-              <span>ناقل <b dir="ltr">{stats.speed < 1 ? 'N' : Math.min(5, Math.floor(stats.speed / 48) + 1)}</b></span>
-              <span className="traction">{stats.drift ? '● فقدت التماسك' : '● جاهز للانزلاق'}</span>
+              <span>{t('speed.gear')} <b dir="ltr">{stats.speed < 1 ? 'N' : Math.min(5, Math.floor(stats.speed / 48) + 1)}</b></span>
+              <span className="traction">{stats.drift ? t('speed.lostGrip') : t('speed.ready')}</span>
             </div>
           </div>
-          <footer>
-            <div className="controls">
-              <span><kbd>W</kbd><kbd>S</kbd> دواسة / فرامل</span>
-              <span><kbd>A</kbd><kbd>D</kbd> توجيه</span>
-              <span><kbd>SPACE</kbd> فرامل يد</span>
-            </div>
-            <span className="footer-note">
-              <img src={LOGO_URL} alt="الرومانسية" width={110} height={30} />
-            </span>
-          </footer>
+          {!isTouch && (
+            <footer>
+              <div className="controls">
+                <span><kbd>W</kbd><kbd>S</kbd> {t('controls.pedals')}</span>
+                <span><kbd>A</kbd><kbd>D</kbd> {t('controls.steer')}</span>
+                <span><kbd>SPACE</kbd> {t('controls.handbrake')}</span>
+              </div>
+              <span className="footer-note">{t('brand.name')}</span>
+            </footer>
+          )}
         </>
       )}
-      {showChrome && started && (
+      {showChrome && started && isTouch && (
         <div
           ref={touchControlsRef}
           className="touch-controls"
@@ -887,7 +995,7 @@ function App() {
             <button
               type="button"
               className="touch-btn touch-handbrake"
-              aria-label="فرامل اليد"
+              aria-label={t('touch.handbrake')}
               onContextMenu={e => e.preventDefault()}
               onPointerDown={e => {
                 e.preventDefault()
@@ -902,7 +1010,7 @@ function App() {
               <button
                 type="button"
                 className="touch-pedal touch-brake"
-                aria-label="فرامل"
+                aria-label={t('touch.brake')}
                 onContextMenu={e => e.preventDefault()}
                 onPointerDown={e => {
                   e.preventDefault()
@@ -916,7 +1024,7 @@ function App() {
               <button
                 type="button"
                 className="touch-pedal touch-gas"
-                aria-label="بنزين"
+                aria-label={t('touch.gas')}
                 onContextMenu={e => e.preventDefault()}
                 onPointerDown={e => {
                   e.preventDefault()
@@ -935,51 +1043,75 @@ function App() {
         <div className="modal-backdrop howto-backdrop" role="dialog" aria-modal="true" aria-labelledby="howto-title">
           <section className="modal howto-modal">
             <span className="eyebrow modal-brand">
-              <img src={LOGO_URL} alt="الرومانسية" width={140} height={38} />
-              <span>أول جولة</span>
+              <span>{t('howto.eyebrow')}</span>
             </span>
-            <h2 id="howto-title">كيف تلعب.</h2>
+            <h2 id="howto-title">{t('howto.title')}</h2>
             <ul className="howto-list">
-              <li><kbd>W</kbd> / <kbd>↑</kbd> بنزين · <kbd>S</kbd> / <kbd>↓</kbd> فرامل · <kbd>A</kbd><kbd>D</kbd> توجيه · <kbd>SPACE</kbd> فرامل يد</li>
-              <li>سرّع، لف، واضغط فرامل اليد لكسر تماسك الخلف — بعدين وجّه عكس الانزلاق عشان تمسكه.</li>
-              <li>الدرفت فوق ٣٦ كم/س على الأسفلت يجيب نقاط. اربط الانزلاقات خلال {CHAIN_WINDOW} ثوانٍ، وارفع المضاعف لـ ×٥.</li>
-              <li>الخروج عن الأسفلت، لمس سيارة مرور، أو قطع سلسلة الدرفت ينهي الجولة. التجاوزات القريبة تعطي بونص.</li>
-              <li>على اللمس: اختَر عجلة أو أزرار أو جيرو (ميل الجهاز) على الشاشة الرئيسية. الدواسات وفرامل اليد على اليمين. في وضع الجيرو اضغط «عاير» وأنت ماسك الجهاز بشكل مريح.</li>
+              {isTouch ? (
+                <>
+                  <li>{t('howto.mobile1')}</li>
+                  <li>{t('howto.mobile2')}</li>
+                  <li>{t('howto.mobile3')}</li>
+                </>
+              ) : (
+                <>
+                  <li>{t('howto.desktop1')}</li>
+                  <li>{t('howto.desktop2')}</li>
+                  <li>{t('howto.desktop3')}</li>
+                </>
+              )}
             </ul>
-            <SteerModePicker value={steerMode} onChange={chooseSteerMode} />
-            <button className="start" onClick={dismissHowTo}>تمام، يلا <span>↖</span></button>
+            {isTouch && <SteerModePicker value={steerMode} onChange={chooseSteerMode} />}
+            <button className="start" onClick={dismissHowTo}>{t('howto.ok')} <span>↖</span></button>
           </section>
         </div>
       )}
-      {showChrome && (help || (started && paused) || finished) && (
+      {showChrome && (help || (started && paused) || finished) && !adBusy && (
         <div className="modal-backdrop">
           <section className="modal">
             <span className="eyebrow modal-brand">
-              <img src={LOGO_URL} alt="الرومانسية" width={140} height={38} />
-              <span>جولة الصينية</span>
+              <span>{t('modal.eyebrow')}</span>
             </span>
-            <h2>{help ? 'لاقِ زاويتك.' : finished ? 'الصينية لسه سخنة.' : 'الدجاجة تقدر تستنى.'}</h2>
+            <h2>{help ? t('modal.helpTitle') : finished ? t('modal.finishTitle') : t('modal.pauseTitle')}</h2>
             {help ? (
               <>
-                <p>اضغط W أو ↑ للتسارع. وجّه بـ A / D أو ← / →. اضغط Space وأنت تدور لكسر تماسك الخلف، ثم أفلتها ووجّه عكس الانزلاق عشان تمسكه. خفّف الدواسة إذا طاح الخلف زيادة.</p>
-                <p>الطريق يلتوي — اقرأ المنعطفات ودرّف فيها. الدرفت فوق ٣٦ كم/س على الأسفلت يجيب نقاط. الزاوية الثابتة ترفع المضاعف؛ الانزلاقات الضعيفة ما تحسب كثير. كل × يحتاج حوالي {COMBO_TIER_TIME} ثوانٍ درفت مستمر، يعني ×٥ يحتاج جولة طويلة مربوطة. عندك {CHAIN_WINDOW} ثانية تربط فيها الانزلاقة التالية. تغيير اتجاه الدرفت يعطي بونص. التجاوزات القريبة تعطي أكثر وأنت درفت. اضرب الدجاجات على الطريق لبونص — تنفجر والجولة تكمل. الخروج عن الأسفلت أو لمس أي سيارة مرور أو قطع سلسلة الدرفت ينهي الجولة.</p>
-                <p>على الشاشات اللمسية: اختَر عجلة أو أزرار أو جيرو (ميل الجهاز) للتوجيه، والدواسات وفرامل اليد على اليمين. في الجيرو اضغط «عاير» وهو ممسوك بشكل مريح. استخدم ملء / طولي / عرضي للعرض. امسك البنزين ووجّه، اضغط فرامل اليد لحظة، ثم وجّه ضد الانزلاق عشان تمسكه.</p>
-                <SteerModePicker value={steerMode} onChange={chooseSteerMode} />
-                <button className="start" onClick={() => setHelp(false)}>تمام <span>↖</span></button>
+                {isTouch ? (
+                  <>
+                    <p>{t('howto.mobile1')}</p>
+                    <p>{t('howto.mobile2')}</p>
+                    <p>{t('howto.mobile3')}</p>
+                    <SteerModePicker value={steerMode} onChange={chooseSteerMode} />
+                  </>
+                ) : (
+                  <>
+                    <p>{t('howto.desktop1')}</p>
+                    <p>{t('howto.desktop2')}</p>
+                    <p>{t('howto.desktop3')}</p>
+                  </>
+                )}
+                <button className="start" onClick={() => setHelp(false)}>{t('modal.ok')} <span>↖</span></button>
               </>
             ) : finished ? (
               <>
-                <p className="finish-reason">{stats.event}</p>
-                <p>سجّلت <b dir="ltr">{stats.score.toLocaleString('en-US')}</b> نقطة على مسافة <b dir="ltr">{(stats.distance / 1000).toFixed(2)} كم</b>.<br />أطول سلسلة: ×{stats.longestCombo} · تجاوزات قريبة: {stats.nearMisses}<br />أفضل رقم: <span dir="ltr">{best.toLocaleString('en-US')}</span></p>
-                <button className="start" onClick={start}>جولة ثانية <span>↖</span></button>
-                <button className="text-button" onClick={() => setShowLeaderboard(true)}>عرض المتصدرين المحليين</button>
+                <p className="finish-reason">{formatEvent(stats.event)}</p>
+                <p style={{ whiteSpace: 'pre-line' }}>
+                  {t('modal.finishBody', {
+                    score: stats.score.toLocaleString('en-US'),
+                    km: (stats.distance / 1000).toFixed(2),
+                    combo: stats.longestCombo,
+                    near: stats.nearMisses,
+                    best: best.toLocaleString('en-US'),
+                  })}
+                </p>
+                <button className="start" onClick={start}>{t('modal.again')} <span>↖</span></button>
+                <button className="text-button" onClick={() => setShowLeaderboard(true)}>{t('modal.showBoard')}</button>
               </>
             ) : (
               <>
-                <p>المطبخ يقدر يستنى.</p>
-                <SteerModePicker value={steerMode} onChange={chooseSteerMode} />
-                <button className="start" onClick={() => setPaused(false)}>كمّل سواقة <span>↖</span></button>
-                <button className="text-button" onClick={start}>أعد الجولة</button>
+                <p>{t('modal.pauseBody')}</p>
+                {isTouch && <SteerModePicker value={steerMode} onChange={chooseSteerMode} />}
+                <button className="start" onClick={() => setPaused(false)}>{t('modal.continue')} <span>↖</span></button>
+                <button className="text-button" onClick={start}>{t('modal.restart')}</button>
               </>
             )}
           </section>
@@ -989,27 +1121,26 @@ function App() {
         <div className="modal-backdrop leaderboard-backdrop">
           <section className="modal leaderboard">
             <span className="eyebrow modal-brand">
-              <img src={LOGO_URL} alt="الرومانسية" width={140} height={38} />
-              <span>أفضل ١٠ / هذا الجهاز</span>
+              <span>{t('board.eyebrow')}</span>
             </span>
-            <h2>سجّل علامتك.</h2>
-            <p>الجولات المكتملة مرتبة بالنقاط. التعادل يروح للأطول مسافة.</p>
+            <h2>{t('board.title')}</h2>
+            <p>{t('board.blurb')}</p>
             {leaderboard.length === 0 ? (
-              <p>ما فيه جولات مكتملة بعد. جولتك الأولى تحدد العلامة.</p>
+              <p>{t('board.empty')}</p>
             ) : (
               <div className="ranking">
-                <div className="ranking-row ranking-heading"><span>#</span><span>النقاط / التاريخ</span><span>كم</span><span>سلسلة</span></div>
+                <div className="ranking-row ranking-heading"><span>#</span><span>{t('board.headScore')}</span><span>{t('board.headKm')}</span><span>{t('board.headCombo')}</span></div>
                 {leaderboard.map((entry, index) => (
                   <div className="ranking-row" key={entry.id}>
                     <b>{index + 1}</b>
-                    <span><strong dir="ltr">{entry.score.toLocaleString('en-US')}</strong><small>{new Date(entry.date).toLocaleDateString('ar-SA')}</small></span>
+                    <span><strong dir="ltr">{entry.score.toLocaleString('en-US')}</strong><small>{new Date(entry.date).toLocaleDateString(locale === 'ar' ? 'ar-SA' : 'en-GB')}</small></span>
                     <span dir="ltr">{(entry.distance / 1000).toFixed(2)}</span>
                     <span dir="ltr">×{entry.combo}</span>
                   </div>
                 ))}
               </div>
             )}
-            <button className="start" onClick={() => setShowLeaderboard(false)}>رجوع <span>↖</span></button>
+            <button className="start" onClick={() => setShowLeaderboard(false)}>{t('board.back')} <span>↖</span></button>
           </section>
         </div>
       )}

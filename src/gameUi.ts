@@ -39,6 +39,15 @@ export type GraphicsQuality = {
   sandSize: number
 }
 
+/** Touch / phone play surface — hide keyboard chrome and show on-screen controls. */
+export function detectTouchPlay(): boolean {
+  if (typeof window === 'undefined') return false
+  const coarse = window.matchMedia('(pointer: coarse)').matches
+  const noHover = window.matchMedia('(hover: none)').matches
+  const manyTouches = (navigator.maxTouchPoints ?? 0) > 1
+  return coarse || (noHover && manyTouches)
+}
+
 export function detectGraphicsQuality(): GraphicsQuality {
   if (typeof window === 'undefined') {
     return { dpr: [1, 1.5], shadows: true, shadowMap: 1024, sky: true, antialias: true, sandSize: 1400 }
