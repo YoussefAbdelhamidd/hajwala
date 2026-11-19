@@ -37,7 +37,7 @@ function prepareMascot(source: THREE.Group, map: THREE.Texture) {
 
 function MascotModel() {
   const source = useLoader(OBJLoader, `${ROOT}/base.obj`)
-  const map = useTexture(`${ROOT}/texture_diffuse.png`)
+  const map = useTexture(`${ROOT}/texture_diffuse.jpg`)
   const model = useMemo(() => prepareMascot(source as THREE.Group, map).clone(true), [source, map])
   useLayoutEffect(() => {
     // Ensure late-loaded texture sticks on this clone.
