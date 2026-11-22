@@ -39,13 +39,24 @@ export type GraphicsQuality = {
   sandSize: number
 }
 
-/** Touch / phone play surface — hide keyboard chrome and show on-screen controls. */
+/**
+ * Touch / phone play surface — hide keyboard chrome and show on-screen controls.
+ * Prefer CrazyGames SDK systemInfo (see detectTouchPlayFromDevice). Do not use
+ * maxTouchPoints alone — touchscreen laptops would get mobile controls.
+ */
 export function detectTouchPlay(): boolean {
   if (typeof window === 'undefined') return false
   const coarse = window.matchMedia('(pointer: coarse)').matches
   const noHover = window.matchMedia('(hover: none)').matches
-  const manyTouches = (navigator.maxTouchPoints ?? 0) > 1
-  return coarse || (noHover && manyTouches)
+  // Phones/tablets are coarse + no hover; fine-pointer touch laptops stay desktop.
+  return coarse && noHover
+}
+
+/** CrazyGames device.type → touch HUD. tablet/mobile only. */
+export function detectTouchPlayFromDevice(type: string | null | undefined): boolean | null {
+  if (type === 'mobile' || type === 'tablet') return true
+  if (type === 'desktop') return false
+  return null
 }
 
 export function detectGraphicsQuality(): GraphicsQuality {

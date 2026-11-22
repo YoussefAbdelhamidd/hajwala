@@ -5,6 +5,8 @@ import type { BootLabelKey } from './bootAssets'
 import {
   gameplayStart,
   gameplayStop,
+  getCrazyDeviceType,
+  getCrazyLocale,
   happytime,
   initCrazyGames,
   loadingStart,
@@ -13,11 +15,29 @@ import {
 } from './crazyGames'
 import { CHAIN_WINDOW, readLeaderboard, rankRun, LEADERBOARD_KEY } from './gameplay'
 import type { LeaderboardEntry } from './gameplay'
-import { clearInputs, detectGraphicsQuality, detectTouchPlay, initialStats, keys, steerAxis } from './gameUi'
+import {
+  clearInputs,
+  detectGraphicsQuality,
+  detectTouchPlay,
+  detectTouchPlayFromDevice,
+  initialStats,
+  keys,
+  steerAxis,
+} from './gameUi'
 import type { Stats } from './gameUi'
 import { useI18n, type MessageKey } from './i18n'
+import {
+  CARS,
+  carById,
+  DEV_UNLOCK_ALL,
+  isCarUnlocked,
+  readSelectedCarId,
+  writeSelectedCarId,
+  type CarId,
+} from './cars'
 
 const GameScene = lazy(() => import('./GameScene'))
+const GaragePreview = lazy(() => import('./GaragePreview'))
 
 /** Visual + input lock: this many degrees of wheel twist = full steer. */
 const STEER_LOCK_DEG = 140
@@ -30,18 +50,17 @@ const GYRO_DEADZONE_DEG = 2.5
 const GYRO_SMOOTH = 0.28
 /** Motion gravity → degrees scale (used only as units; calibration zeros the rest). */
 const GYRO_MOTION_RAD2DEG = 180 / Math.PI
-const HOWTO_KEY = 'tafheet-howto-seen'
+const COACH_KEY = 'tafheet-coach-seen-v1'
 const STEER_MODE_KEY = 'tafheet-steer-mode'
 
-type OrientationMode = 'auto' | 'portrait' | 'landscape'
 type SteerMode = 'wheel' | 'buttons' | 'gyro'
 type GyroPermission = 'granted' | 'denied' | 'unsupported'
 type MotionPermissionEvent = {
   requestPermission?: () => Promise<'granted' | 'denied'>
 }
 
-function readHowToSeen() {
-  try { return localStorage.getItem(HOWTO_KEY) === '1' } catch { return false }
+function readCoachSeen() {
+  try { return localStorage.getItem(COACH_KEY) === '1' } catch { return false }
 }
 
 function readSteerMode(): SteerMode {
@@ -272,7 +291,7 @@ function TouchSteeringWheel() {
   )
 }
 
-function holdKeyHandlers(code: 'KeyA' | 'KeyD') {
+function holdKeyHandlers(code: 'KeyA' | 'KeyD' | 'KeyQ') {
   return {
     onPointerDown: (e: ReactPointerEvent<HTMLButtonElement>) => {
       e.preventDefault()
@@ -498,18 +517,21 @@ function SteerModePicker({
 }
 
 function App() {
-  const { locale, dir, setLocale, t, formatEvent } = useI18n()
+  const { locale, dir, setLocale, syncCrazyLocale, t, formatEvent } = useI18n()
   const [stats, setStats] = useState(initialStats)
   const [started, setStarted] = useState(false)
   const [paused, setPaused] = useState(false)
   const [runId, setRunId] = useState(0)
   const [best, setBest] = useState(() => { try { return Number(localStorage.getItem('tafheet-best') || 0) } catch { return 0 } })
   const [help, setHelp] = useState(false)
-  const [showHowTo, setShowHowTo] = useState(false)
-  const [coach, setCoach] = useState(false)
+  const [showCoach, setShowCoach] = useState(() => !readCoachSeen())
   const [steerMode, setSteerMode] = useState<SteerMode>(readSteerMode)
   const [leaderboard, setLeaderboard] = useState(readLeaderboard)
   const [showLeaderboard, setShowLeaderboard] = useState(false)
+  const [showGarage, setShowGarage] = useState(false)
+  const [carId, setCarId] = useState<CarId>(() => readSelectedCarId())
+  const [garageFocusId, setGarageFocusId] = useState<CarId>(() => readSelectedCarId())
+  const selectedCar = useMemo(() => carById(carId), [carId])
   const [adBusy, setAdBusy] = useState(false)
   const savedRun = useRef(-1)
   const happyPending = useRef(false)
@@ -518,8 +540,6 @@ function App() {
   const [crashReveal, setCrashReveal] = useState(false)
   const quality = useMemo(() => detectGraphicsQuality(), [])
   const [isTouch, setIsTouch] = useState(() => detectTouchPlay())
-  const [isFullscreen, setIsFullscreen] = useState(false)
-  const [orientation, setOrientation] = useState<OrientationMode>('auto')
   const [boot, setBoot] = useState<{
     visible: boolean
     fading: boolean
@@ -573,7 +593,8 @@ function App() {
     const down = (e: KeyboardEvent) => {
       if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) e.preventDefault()
       keys.add(e.code)
-      if (e.code === 'Escape') setPaused(v => !v)
+      // Escape closes CrazyGames fullscreen — pause with P / the pause button only.
+      if (e.code === 'KeyP') setPaused(v => !v)
     }
     const up = (e: KeyboardEvent) => keys.delete(e.code)
     const blur = () => { clearInputs(); setPaused(true) }
@@ -629,10 +650,11 @@ function App() {
           ratio: Math.max(prev.ratio, progress.ratio * 0.9),
           label: progress.label as BootLabelKey,
         }))
-      }).catch(() => { /* Suspense / AssetGate still finishes the wait. */ })
+      }, selectedCar.url).catch(() => { /* Suspense / AssetGate still finishes the wait. */ })
 
       await initCrazyGames()
       if (cancelled) return
+      syncCrazyLocale(getCrazyLocale())
       loadingStart()
       await assets
       if (cancelled) return
@@ -644,6 +666,8 @@ function App() {
       }))
     })()
     return () => { cancelled = true }
+  // selectedCar.url is read once at boot; garage swaps load via useGLTF later.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const finishBoot = useCallback(() => {
@@ -673,69 +697,14 @@ function App() {
     if (boot.mountScene && boot.sceneReady) finishBoot()
   }, [boot.mountScene, boot.sceneReady, finishBoot])
 
-  useEffect(() => {
-    const sync = () => setIsFullscreen(Boolean(document.fullscreenElement))
-    document.addEventListener('fullscreenchange', sync)
-    sync()
-    return () => document.removeEventListener('fullscreenchange', sync)
+  const markCoachSeen = useCallback(() => {
+    try { localStorage.setItem(COACH_KEY, '1') } catch { /* still playable this session */ }
   }, [])
 
-  const lockOrientation = useCallback(async (mode: OrientationMode) => {
-    const orientationApi = screen.orientation as ScreenOrientation & {
-      lock?: (type: string) => Promise<void>
-      unlock?: () => void
-    }
-    try {
-      if (mode === 'auto') {
-        orientationApi.unlock?.()
-        return
-      }
-      await orientationApi.lock?.(mode)
-    } catch {
-      /* Many mobile browsers require fullscreen before lock; layout CSS still applies. */
-    }
-  }, [])
-
-  const toggleFullscreen = useCallback(async () => {
-    const root = document.documentElement as HTMLElement & {
-      webkitRequestFullscreen?: () => Promise<void> | void
-    }
-    try {
-      if (document.fullscreenElement) {
-        await document.exitFullscreen()
-        return
-      }
-      if (root.requestFullscreen) await root.requestFullscreen()
-      else root.webkitRequestFullscreen?.()
-    } catch {
-      /* iOS Safari often blocks programmatic fullscreen outside video. */
-    }
-  }, [])
-
-  const chooseOrientation = useCallback(async (mode: OrientationMode) => {
-    setOrientation(mode)
-    if (mode !== 'auto' && !document.fullscreenElement) {
-      await toggleFullscreen()
-    }
-    await lockOrientation(mode)
-  }, [lockOrientation, toggleFullscreen])
-
-  useEffect(() => {
-    if (!isFullscreen && orientation !== 'auto') {
-      lockOrientation('auto')
-    } else if (isFullscreen) {
-      lockOrientation(orientation)
-    }
-  }, [isFullscreen, orientation, lockOrientation])
-
-  const markHowToSeen = useCallback(() => {
-    try { localStorage.setItem(HOWTO_KEY, '1') } catch { /* still playable this session */ }
-  }, [])
-
-  const dismissHowTo = useCallback(() => {
-    setShowHowTo(false)
-    markHowToSeen()
-  }, [markHowToSeen])
+  const dismissCoach = useCallback(() => {
+    setShowCoach(false)
+    markCoachSeen()
+  }, [markCoachSeen])
 
   const chooseSteerMode = useCallback(async (mode: SteerMode) => {
     clearInputs()
@@ -745,6 +714,22 @@ function App() {
     try { localStorage.setItem(STEER_MODE_KEY, mode) } catch { /* preference still applies this session */ }
   }, [])
 
+  const openGarage = useCallback(() => {
+    setGarageFocusId(carId)
+    setHelp(false)
+    setShowGarage(true)
+  }, [carId])
+
+  const chooseCar = useCallback((id: CarId) => {
+    const next = carById(id)
+    if (!isCarUnlocked(next, best)) return
+    setCarId(id)
+    setGarageFocusId(id)
+    writeSelectedCarId(id)
+    // Close so the drift-in is visible on the intro / road.
+    setShowGarage(false)
+  }, [best])
+
   const start = () => {
     clearInputs()
     happyPending.current = false
@@ -753,14 +738,31 @@ function App() {
     setStarted(true)
     setPaused(false)
     setShowLeaderboard(false)
-    setShowHowTo(false)
+    setShowGarage(false)
     setHelp(false)
-    // Play-first onboarding: short coach tips instead of a blocking howto wall.
-    if (!readHowToSeen()) setCoach(true)
+    if (!readCoachSeen()) setShowCoach(true)
+  }
+
+  const goMenu = () => {
+    clearInputs()
+    happyPending.current = false
+    setStarted(false)
+    setPaused(false)
+    setShowLeaderboard(false)
+    setShowGarage(false)
+    setHelp(false)
+    setShowCoach(false)
+    setCrashReveal(false)
+    setStats(initialStats)
+    // Reset world/camera to the intro spawn (same as a fresh load).
+    setRunId(v => v + 1)
   }
 
   useEffect(() => {
-    const syncTouch = () => setIsTouch(detectTouchPlay())
+    const syncTouch = () => {
+      const fromSdk = detectTouchPlayFromDevice(getCrazyDeviceType())
+      setIsTouch(fromSdk ?? detectTouchPlay())
+    }
     const coarse = window.matchMedia('(pointer: coarse)')
     const hover = window.matchMedia('(hover: none)')
     coarse.addEventListener?.('change', syncTouch)
@@ -772,18 +774,28 @@ function App() {
     }
   }, [])
 
+  // Prefer CrazyGames systemInfo once the SDK finishes init during boot.
   useEffect(() => {
-    if (!coach || !started || paused || stats.crashed) return
-    const id = window.setTimeout(() => {
-      setCoach(false)
-      markHowToSeen()
-    }, 5500)
-    return () => window.clearTimeout(id)
-  }, [coach, started, paused, stats.crashed, markHowToSeen])
+    if (boot.visible) return
+    const fromSdk = detectTouchPlayFromDevice(getCrazyDeviceType())
+    if (fromSdk != null) setIsTouch(fromSdk)
+  }, [boot.visible])
 
   // Keep the highway/car visible on the entry screen; only simulate once the run starts.
-  const running = started && !paused && !help && !showHowTo && !showLeaderboard && !adBusy && !(started && stats.crashed)
+  const running = started && !paused && !help && !showLeaderboard && !showGarage && !adBusy && !(started && stats.crashed)
   const showChrome = !boot.visible
+  const coachVisible = started && showCoach && running && !stats.crashed
+
+  // Teach controls in-run, then clear once the player drifts or after a short window.
+  useEffect(() => {
+    if (!coachVisible) return
+    if (stats.drift || stats.combo > 1) {
+      dismissCoach()
+      return
+    }
+    const id = window.setTimeout(dismissCoach, 10000)
+    return () => window.clearTimeout(id)
+  }, [coachVisible, stats.drift, stats.combo, dismissCoach])
 
   useEffect(() => {
     if (!started) return
@@ -812,7 +824,7 @@ function App() {
 
   return (
     <main
-      className={`game orient-${orientation}${isFullscreen ? ' is-fullscreen' : ''}${started ? ' is-playing' : ' is-idle'}${isTouch ? ' is-touch' : ' is-desktop'}`}
+      className={`game${started ? ' is-playing' : ' is-idle'}${isTouch ? ' is-touch' : ' is-desktop'}`}
       dir={dir}
       lang={locale}
       data-input={isTouch ? 'touch' : 'desktop'}
@@ -824,9 +836,12 @@ function App() {
             runId={runId}
             onStats={reportStats}
             onReady={onSceneReady}
-            showBuddy={started}
+            showBuddy={false}
             crashed={stats.crashed}
             quality={quality}
+            carUrl={selectedCar.url}
+            carFeel={selectedCar}
+            loadTraffic={started}
           />
         </Suspense>
       )}
@@ -847,7 +862,7 @@ function App() {
       {showChrome && (
         <>
           <header>
-            <a className="brand" href="/" aria-label={t('brand.home')}>
+            <a className="brand" href="./" aria-label={t('brand.home')}>
               <span className="brand-title">{t('brand.name')}</span>
               <span className="brand-tag">{t('brand.tag')}</span>
             </a>
@@ -855,32 +870,9 @@ function App() {
               <span className="dot" /> {t('loc.riyadhDrift')}
               <span className="coordinates" dir="ltr">24°43′ N &nbsp; 46°40′ E</span>
             </div>
-            <div className="mobile-display" role="group" aria-label={t('display.options')}>
-              <button
-                type="button"
-                className={`chip-button${isFullscreen ? ' is-on' : ''}`}
-                onClick={toggleFullscreen}
-                aria-pressed={isFullscreen}
-                aria-label={isFullscreen ? t('display.exitFs') : t('display.enterFs')}
-              >{isFullscreen ? t('display.exit') : t('display.full')}</button>
-              <button
-                type="button"
-                className={`chip-button${orientation === 'portrait' ? ' is-on' : ''}`}
-                onClick={() => chooseOrientation(orientation === 'portrait' ? 'auto' : 'portrait')}
-                aria-pressed={orientation === 'portrait'}
-                aria-label={t('display.portrait')}
-              >{t('display.portraitShort')}</button>
-              <button
-                type="button"
-                className={`chip-button${orientation === 'landscape' ? ' is-on' : ''}`}
-                onClick={() => chooseOrientation(orientation === 'landscape' ? 'auto' : 'landscape')}
-                aria-pressed={orientation === 'landscape'}
-                aria-label={t('display.landscape')}
-              >{t('display.landscapeShort')}</button>
-            </div>
             <button
               type="button"
-              className="chip-button lang-chip"
+              className="chip-button lang-chip lang-chip-end"
               onClick={() => setLocale(locale === 'ar' ? 'en' : 'ar')}
               aria-label={t('nav.lang')}
             >{locale === 'ar' ? 'EN' : 'ع'}</button>
@@ -888,8 +880,17 @@ function App() {
             <button
               className="icon-button"
               onClick={() => {
-                setHelp(false)
-                setShowHowTo(v => !v)
+                if (showGarage) setShowGarage(false)
+                else openGarage()
+              }}
+              aria-label={t('nav.garage')}
+              disabled={adBusy}
+            >▣</button>
+            <button
+              className="icon-button"
+              onClick={() => {
+                setPaused(false)
+                setHelp(v => !v)
               }}
               aria-label={t('nav.howto')}
               disabled={adBusy}
@@ -912,6 +913,11 @@ function App() {
               <h1>{t('boot.title.hold')}<br /><em>{t('boot.title.tray')}</em></h1>
               <p>{t('intro.body')}</p>
               {isTouch && <SteerModePicker value={steerMode} onChange={chooseSteerMode} />}
+              <button type="button" className="garage-cta" onClick={openGarage}>
+                <span className="garage-cta-label">{t('garage.cta')}</span>
+                <strong>{t(`car.${selectedCar.id}.name` as MessageKey)}</strong>
+                <span className="garage-cta-hint">{t('garage.ctaHint')} <span aria-hidden="true">↗</span></span>
+              </button>
               <button className="start" onClick={start} disabled={adBusy}>{t('intro.start')} <span>↖</span></button>
               <div className="start-note">{isTouch ? t('intro.noteMobile') : t('intro.noteDesktop')}</div>
             </section>
@@ -937,13 +943,13 @@ function App() {
               <div className="combo-bar" style={{ transform: `scaleX(${stats.grace / CHAIN_WINDOW})`, transformOrigin: dir === 'rtl' ? 'right' : 'left' }} />
             </div>
           )}
-          {stats.event && !paused && <div className="run-event" role="status">{formatEvent(stats.event)}</div>}
-          {stats.offroad && <div className="offroad">{t('hud.offroad')}</div>}
-          {coach && !paused && !finished && (
-            <div className="coach" role="status">
-              <p>{isTouch ? t('coach.mobile') : t('coach.desktop')}</p>
-            </div>
+          {stats.event && !paused && (
+            <div
+              className={`run-event${stats.event === 'chain_broken' || stats.event.startsWith('chain_broken') ? ' run-event-soft' : ''}`}
+              role="status"
+            >{formatEvent(stats.event)}</div>
           )}
+          {stats.offroad && <div className="offroad">{t('hud.offroad')}</div>}
         </>
       )}
       {showChrome && (
@@ -956,7 +962,7 @@ function App() {
             </div>
           </div>
           <div className="speedometer">
-            <div className="speed-top"><span>{t('speed.car')}</span><span dir="ltr">2014 / RWD</span></div>
+            <div className="speed-top"><span>{t('speed.car')}</span><span dir="ltr">{t(`car.${selectedCar.id}.name` as MessageKey)}</span></div>
             <div className="speed-value" dir="ltr">{Math.round(stats.speed).toString().padStart(3, '0')}<span>{t('speed.unit')}</span></div>
             <div className="speed-bars">{Array.from({ length: 24 }, (_, i) => <i key={i} className={i < stats.speed / 225 * 24 ? 'lit' : ''} />)}</div>
             <div className="speed-bottom">
@@ -970,11 +976,29 @@ function App() {
                 <span><kbd>W</kbd><kbd>S</kbd> {t('controls.pedals')}</span>
                 <span><kbd>A</kbd><kbd>D</kbd> {t('controls.steer')}</span>
                 <span><kbd>SPACE</kbd> {t('controls.handbrake')}</span>
+                <span><kbd>P</kbd> {t('controls.pause')}</span>
               </div>
               <span className="footer-note">{t('brand.name')}</span>
             </footer>
           )}
         </>
+      )}
+      {showChrome && coachVisible && (
+        <div className="coach-overlay" role="status">
+          <div className="coach-card">
+            {!isTouch && (
+              <div className="coach-keys" aria-hidden="true">
+                <span><kbd>W</kbd><kbd>S</kbd></span>
+                <span><kbd>A</kbd><kbd>D</kbd></span>
+                <span><kbd>SPACE</kbd></span>
+              </div>
+            )}
+            <p>{isTouch ? t('coach.mobile') : t('coach.desktop')}</p>
+            <button type="button" className="text-button coach-skip" onClick={dismissCoach}>
+              {t('coach.skip')}
+            </button>
+          </div>
+        </div>
       )}
       {showChrome && started && isTouch && (
         <div
@@ -1039,33 +1063,6 @@ function App() {
           </div>
         </div>
       )}
-      {showChrome && showHowTo && !help && !finished && (
-        <div className="modal-backdrop howto-backdrop" role="dialog" aria-modal="true" aria-labelledby="howto-title">
-          <section className="modal howto-modal">
-            <span className="eyebrow modal-brand">
-              <span>{t('howto.eyebrow')}</span>
-            </span>
-            <h2 id="howto-title">{t('howto.title')}</h2>
-            <ul className="howto-list">
-              {isTouch ? (
-                <>
-                  <li>{t('howto.mobile1')}</li>
-                  <li>{t('howto.mobile2')}</li>
-                  <li>{t('howto.mobile3')}</li>
-                </>
-              ) : (
-                <>
-                  <li>{t('howto.desktop1')}</li>
-                  <li>{t('howto.desktop2')}</li>
-                  <li>{t('howto.desktop3')}</li>
-                </>
-              )}
-            </ul>
-            {isTouch && <SteerModePicker value={steerMode} onChange={chooseSteerMode} />}
-            <button className="start" onClick={dismissHowTo}>{t('howto.ok')} <span>↖</span></button>
-          </section>
-        </div>
-      )}
       {showChrome && (help || (started && paused) || finished) && !adBusy && (
         <div className="modal-backdrop">
           <section className="modal">
@@ -1087,6 +1084,7 @@ function App() {
                     <p>{t('howto.desktop1')}</p>
                     <p>{t('howto.desktop2')}</p>
                     <p>{t('howto.desktop3')}</p>
+                    <p>{t('howto.desktop4')}</p>
                   </>
                 )}
                 <button className="start" onClick={() => setHelp(false)}>{t('modal.ok')} <span>↖</span></button>
@@ -1104,6 +1102,7 @@ function App() {
                   })}
                 </p>
                 <button className="start" onClick={start}>{t('modal.again')} <span>↖</span></button>
+                <button type="button" className="start start-secondary" onClick={goMenu}>{t('modal.menu')} <span>↖</span></button>
                 <button className="text-button" onClick={() => setShowLeaderboard(true)}>{t('modal.showBoard')}</button>
               </>
             ) : (
@@ -1111,6 +1110,7 @@ function App() {
                 <p>{t('modal.pauseBody')}</p>
                 {isTouch && <SteerModePicker value={steerMode} onChange={chooseSteerMode} />}
                 <button className="start" onClick={() => setPaused(false)}>{t('modal.continue')} <span>↖</span></button>
+                <button type="button" className="start start-secondary" onClick={goMenu}>{t('modal.menu')} <span>↖</span></button>
                 <button className="text-button" onClick={start}>{t('modal.restart')}</button>
               </>
             )}
@@ -1141,6 +1141,65 @@ function App() {
               </div>
             )}
             <button className="start" onClick={() => setShowLeaderboard(false)}>{t('board.back')} <span>↖</span></button>
+          </section>
+        </div>
+      )}
+      {showChrome && showGarage && (
+        <div className="modal-backdrop garage-backdrop" role="dialog" aria-modal="true" aria-labelledby="garage-title">
+          <section className="modal garage">
+            <span className="eyebrow modal-brand">
+              <span>{t('garage.eyebrow')}</span>
+            </span>
+            <h2 id="garage-title">{t('garage.title')}</h2>
+            <p>{t('garage.blurb')}</p>
+            {DEV_UNLOCK_ALL && <p className="garage-dev">{t('garage.devAll')}</p>}
+            <Suspense fallback={<div className="garage-preview garage-preview-loading" />}>
+              <GaragePreview
+                url={carById(garageFocusId).url}
+                locked={!isCarUnlocked(carById(garageFocusId), best)}
+                label={t(`car.${garageFocusId}.name` as MessageKey)}
+              />
+            </Suspense>
+            <p className="garage-focus-name">{t(`car.${garageFocusId}.name` as MessageKey)}</p>
+            <div className="garage-list">
+              {CARS.map(car => {
+                const unlocked = isCarUnlocked(car, best)
+                const selected = car.id === carId
+                const focused = car.id === garageFocusId
+                return (
+                  <button
+                    key={car.id}
+                    type="button"
+                    className={`garage-row${selected ? ' is-selected' : ''}${focused ? ' is-focused' : ''}${unlocked ? '' : ' is-locked'}`}
+                    onClick={() => setGarageFocusId(car.id)}
+                  >
+                    <span className="garage-name">{t(`car.${car.id}.name` as MessageKey)}</span>
+                    <span className="garage-meta">
+                      {!unlocked
+                        ? t('garage.locked', { score: car.unlockScore.toLocaleString('en-US') })
+                        : selected
+                          ? t('garage.selected')
+                          : focused
+                            ? t('garage.preview')
+                            : ''}
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
+            <div className="garage-actions">
+              <button
+                type="button"
+                className="start"
+                disabled={!isCarUnlocked(carById(garageFocusId), best) || garageFocusId === carId}
+                onClick={() => chooseCar(garageFocusId)}
+              >
+                {garageFocusId === carId ? t('garage.selected') : t('garage.use')} <span>✓</span>
+              </button>
+              <button type="button" className="start start-secondary" onClick={() => setShowGarage(false)}>
+                {t('garage.back')} <span>↖</span>
+              </button>
+            </div>
           </section>
         </div>
       )}

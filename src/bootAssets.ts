@@ -1,18 +1,28 @@
 /** Critical first-paint assets — fetched once so the intro scene has no pop-in. */
 
-export const CAR_URL = '/2014_nissan_ddsen.glb?v=wheels1'
-export const TOWER_URL = '/saudi__tower.glb'
-export const MASCOT_ROOT = '/57dc3d0f-669e-4be7-a9ec-70d5a4e98508'
-export const RESTAURANT_ROOT = '/restaurant'
+/** Works with Vite `base: './'` when the game is hosted in a subfolder (CrazyGames). */
+export function publicUrl(path: string) {
+  const base = import.meta.env.BASE_URL || './'
+  return `${base}${path.replace(/^\//, '')}`
+}
 
-const ASSET_URLS = [
-  CAR_URL,
-  TOWER_URL,
-  `${MASCOT_ROOT}/base.obj`,
-  `${MASCOT_ROOT}/texture_diffuse.jpg`,
-  `${RESTAURANT_ROOT}/base.obj`,
-  `${RESTAURANT_ROOT}/texture_diffuse.jpg`,
-]
+/** Default tray runner — garage may swap this at boot. */
+export const CAR_URL = publicUrl('tray_runner.glb?v=debrand3')
+export const TOWER_URL = publicUrl('saudi__tower.glb')
+export const MASCOT_ROOT = publicUrl('57dc3d0f-669e-4be7-a9ec-70d5a4e98508')
+export const RESTAURANT_ROOT = publicUrl('restaurant')
+
+/** Boot only pulls the selected car + scenery — garage/traffic load after Start. */
+function coreAssetUrls(carUrl: string) {
+  return [
+    carUrl,
+    TOWER_URL,
+    `${MASCOT_ROOT}/base.obj`,
+    `${MASCOT_ROOT}/texture_diffuse.jpg`,
+    `${RESTAURANT_ROOT}/base.obj`,
+    `${RESTAURANT_ROOT}/texture_diffuse.jpg`,
+  ]
+}
 
 export type BootLabelKey =
   | 'boot.tray'
@@ -43,8 +53,10 @@ function fetchAsset(url: string) {
  */
 export async function preloadBootAssets(
   onProgress: (progress: BootProgress) => void,
+  carUrl: string = CAR_URL,
 ): Promise<void> {
-  const total = ASSET_URLS.length + 1
+  const assetUrls = coreAssetUrls(carUrl)
+  const total = assetUrls.length + 1
   let finished = 0
 
   const tick = (label: BootLabelKey) => {
@@ -55,11 +67,13 @@ export async function preloadBootAssets(
   onProgress({ ratio: 0.04, label: 'boot.tray' })
 
   await Promise.all(
-    ASSET_URLS.map(url =>
+    assetUrls.map(url =>
       fetchAsset(url)
         .catch(() => fetch(url).then(r => r.arrayBuffer()))
         .then(() => {
-          if (url.includes('nissan')) tick('boot.car')
+          if (
+            url.includes('tray_runner') || url.includes('/cars/') || url === carUrl
+          ) tick('boot.car')
           else if (url.includes('tower')) tick('boot.towers')
           else if (url.includes('57dc3d0f')) tick('boot.chicken')
           else if (url.includes('restaurant')) tick('boot.kitchen')

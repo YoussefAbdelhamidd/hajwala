@@ -9,6 +9,10 @@ export const initialDriving = (): DrivingState => ({
   x: 0, z: 0, yaw: 0, forward: 0, lateral: 0, yawRate: 0, steering: 0, speed: 0, rearGrip: 1,
 })
 
+export type DriveFeel = { accel: number; grip: number; topSpeed: number }
+
+export const DEFAULT_FEEL: DriveFeel = { accel: 1, grip: 1, topSpeed: 1 }
+
 // A planar bicycle model. Tire forces act at each axle, so rear grip loss
 // produces rotation rather than a prescribed drift angle.
 export function stepDriving(
@@ -18,7 +22,11 @@ export function stepDriving(
   brake: boolean,
   handbrake: boolean,
   dt: number,
+  feel: DriveFeel = DEFAULT_FEEL,
 ) {
+  const accelMul = feel.accel
+  const gripMul = feel.grip
+  const topMul = feel.topSpeed
   const steps = Math.ceil(dt / (1 / 120))
   const h = dt / steps
   for (let i = 0; i < steps; i++) {
@@ -38,13 +46,13 @@ export function stepDriving(
     const rearSlip = Math.atan2(s.lateral - 1.4 * s.yawRate, denominator)
     const surface = offroad ? .48 : 1
     const loadTransfer = brake ? .8 : gas ? 1.08 : .93
-    const frontLimit = 7.8 * surface / loadTransfer
+    const frontLimit = 7.8 * surface * gripMul / loadTransfer
     // Space = rear glider only. Breaks traction; does not add yaw push.
     const absSlip = Math.abs(slip)
     const sliding = Math.min(1, absSlip / .35)
     const targetRearGrip = handbrake ? .18 : gas ? .82 - sliding * .12 : 1
     s.rearGrip += (targetRearGrip - s.rearGrip) * (1 - Math.exp(-h * (handbrake ? 10 : 5)))
-    const rearLimit = 8.4 * surface * loadTransfer * s.rearGrip
+    const rearLimit = 8.4 * surface * loadTransfer * s.rearGrip * gripMul
     const tireForce = (slipAngle: number, stiffness: number, limit: number) => {
       const peak = Math.tanh(slipAngle * stiffness / limit)
       const slidingGrip = 1 - .14 * Math.min(1, Math.max(0, (Math.abs(slipAngle) - .22) / .6))
@@ -57,7 +65,7 @@ export function stepDriving(
     // Handbrake: tires don't push linear or yaw — that self-align flips past 180° and yanks at speed.
     const front = handbrake ? 0 : tireForce(frontSlip, 48, frontLimit) * lowSpeedGrip
     const rear = handbrake ? 0 : tireForce(rearSlip, 52, rearLimit) * lowSpeedGrip
-    const drive = gas ? 14 * Math.max(0, 1 - keptSpeed / 82) : 0
+    const drive = gas ? 14 * accelMul * Math.max(0, 1 - keptSpeed / (82 * topMul)) : 0
     const resistance = (handbrake ? .12 : .35) + .0012 * keptSpeed * keptSpeed * (handbrake ? .2 : 1) + (offroad ? 3 : 0)
     const deceleration = (brake ? 14 : 0) + (handbrake ? .08 : 0) + resistance
 

@@ -1,4 +1,4 @@
-/** Thin CrazyGames HTML5 SDK v3 wrapper. Safe on non-CrazyGames hosts. */
+/** Thin CrazyGames HTML5 SDK v3 wrapper. Safe offline / file:// / non-CG hosts. */
 
 export type CrazyEnvironment = 'local' | 'crazygames' | 'disabled'
 
@@ -10,9 +10,19 @@ type AdCallbacks = {
   adError?: (error: { code?: string; message?: string } | unknown) => void
 }
 
+export type CrazyDeviceType = 'desktop' | 'tablet' | 'mobile'
+
+type CrazySystemInfo = {
+  locale?: string
+  device?: { type?: CrazyDeviceType | string }
+}
+
 type CrazySDK = {
   init: () => Promise<void>
   environment: CrazyEnvironment
+  user?: {
+    systemInfo?: CrazySystemInfo
+  }
   game: {
     loadingStart: () => void
     loadingStop: () => void
@@ -31,9 +41,12 @@ declare global {
   }
 }
 
+const SDK_SRC = 'https://sdk.crazygames.com/crazygames-sdk-v3.js'
+
 let usable = false
 let gameplayActive = false
 let loadingActive = false
+let loadPromise: Promise<boolean> | null = null
 
 function sdk(): CrazySDK | null {
   return window.CrazyGames?.SDK ?? null
@@ -52,15 +65,48 @@ function safe(label: string, fn: () => void) {
   }
 }
 
+function loadSdkScript(): Promise<boolean> {
+  if (sdk()) return Promise.resolve(true)
+  if (loadPromise) return loadPromise
+
+  loadPromise = new Promise(resolve => {
+    const existing = document.querySelector<HTMLScriptElement>(`script[src="${SDK_SRC}"]`)
+    if (existing) {
+      existing.addEventListener('load', () => resolve(Boolean(sdk())))
+      existing.addEventListener('error', () => resolve(false))
+      // Already loaded
+      if (sdk()) resolve(true)
+      window.setTimeout(() => resolve(Boolean(sdk())), 2500)
+      return
+    }
+
+    const script = document.createElement('script')
+    script.src = SDK_SRC
+    script.async = true
+    script.onload = () => resolve(Boolean(sdk()))
+    script.onerror = () => resolve(false)
+    document.head.appendChild(script)
+    window.setTimeout(() => resolve(Boolean(sdk())), 2500)
+  })
+
+  return loadPromise
+}
+
 /** Init once on the loading screen. Returns true when local/crazygames. */
 export async function initCrazyGames(): Promise<boolean> {
+  const ready = await loadSdkScript()
   const api = sdk()
-  if (!api) {
+  if (!ready || !api) {
     usable = false
     return false
   }
   try {
-    await api.init()
+    await Promise.race([
+      api.init(),
+      new Promise<never>((_, reject) => {
+        window.setTimeout(() => reject(new Error('CrazyGames init timeout')), 2500)
+      }),
+    ])
     const env = api.environment
     usable = env === 'local' || env === 'crazygames'
     if (!usable) {
@@ -85,6 +131,32 @@ export function getCrazyEnvironment(): CrazyEnvironment | null {
 
 export function isCrazyGamesReady() {
   return usable
+}
+
+/** Prefer SDK device type over touch heuristics (CrazyGames technical requirements). */
+export function getCrazyDeviceType(): CrazyDeviceType | null {
+  if (!canCall()) return null
+  try {
+    const type = sdk()?.user?.systemInfo?.device?.type
+    if (type === 'desktop' || type === 'tablet' || type === 'mobile') return type
+    return null
+  } catch {
+    return null
+  }
+}
+
+/**
+ * Portal language from SDK `systemInfo.locale` (e.g. en_US, ar_SA).
+ * CrazyGames wants games with translations to follow this, then fall back to English.
+ */
+export function getCrazyLocale(): string | null {
+  if (!canCall()) return null
+  try {
+    const locale = sdk()?.user?.systemInfo?.locale
+    return typeof locale === 'string' && locale.trim() ? locale.trim() : null
+  } catch {
+    return null
+  }
 }
 
 export function loadingStart() {

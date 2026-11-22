@@ -1,0 +1,230 @@
+
+==== rx7 /Users/rokaya/Downloads/2002-mazda-rx-7-spirit-r/source/2002 Mazda RX-7 Spirit-R.glb
+meshes=57 mats=10
+wheelish_count=8
+  W LOD_A_BRAKE_CALIPER_FRONT_LEFT_mm_misc v=2393 size=(0.31,0.63,0.63) c=(0.70,-1.34,0.32) mats=Vehicle_Exterior_mm_misc,Vehicle_Exterior_mm_rotor,Vehicle_Exterior_mm_wheel
+  W LOD_A_BRAKE_CALIPER_FRONT_LEFT_mm_misc.001 v=2393 size=(0.31,0.63,0.63) c=(0.70,1.12,0.32) mats=Vehicle_Exterior_mm_misc,Vehicle_Exterior_mm_rotor,Vehicle_Exterior_mm_wheel
+  W LOD_A_BRAKE_CALIPER_FRONT_LEFT_mm_misc.002 v=2393 size=(0.31,0.63,0.63) c=(-0.70,1.12,0.32) mats=Vehicle_Exterior_mm_misc,Vehicle_Exterior_mm_rotor,Vehicle_Exterior_mm_wheel
+  W LOD_A_BRAKE_CALIPER_FRONT_LEFT_mm_misc.003 v=2393 size=(0.31,0.63,0.63) c=(-0.70,-1.34,0.32) mats=Vehicle_Exterior_mm_misc,Vehicle_Exterior_mm_rotor,Vehicle_Exterior_mm_wheel
+  W LOD_A_BRAKES_BOOT_mm_lights v=28 size=(0.30,0.01,0.03) c=(0.00,2.04,0.82) mats=Vehicle_Exterior_mm_lights
+  W LOD_A_BRAKES_LEFT_mm_lights v=50 size=(0.17,0.05,0.09) c=(0.50,1.97,0.74) mats=Vehicle_Exterior_mm_lights
+  W LOD_A_BRAKES_RIGHT_mm_lights v=50 size=(0.17,0.05,0.09) c=(-0.50,1.97,0.74) mats=Vehicle_Exterior_mm_lights
+  W LOD_A_STEERING_WHEEL_mm_cab v=266 size=(0.34,0.18,0.35) c=(-0.40,-0.18,0.72) mats=Vehicle_Exterior_mm_cab
+lowest_meshes:
+  L LOD_A_BRAKE_CALIPER_FRONT_LEFT_mm_misc.003 v=2393 size=(0.31,0.63,0.63) c=(-0.70,-1.34,0.32)
+  L LOD_A_BRAKE_CALIPER_FRONT_LEFT_mm_misc.002 v=2393 size=(0.31,0.63,0.63) c=(-0.70,1.12,0.32)
+  L LOD_A_BRAKE_CALIPER_FRONT_LEFT_mm_misc v=2393 size=(0.31,0.63,0.63) c=(0.70,-1.34,0.32)
+  L LOD_A_BRAKE_CALIPER_FRONT_LEFT_mm_misc.001 v=2393 size=(0.31,0.63,0.63) c=(0.70,1.12,0.32)
+  L LOD_A_CHASSIS_mm_chassis v=1546 size=(1.74,4.03,0.64) c=(0.00,0.03,0.46)
+  L LOD_A_FRONTBUMPER_mm_misc v=1620 size=(1.74,0.44,0.39) c=(0.00,-1.93,0.34)
+  L LOD_A_BODY_mm_ext v=2987 size=(1.75,3.68,1.05) c=(0.00,0.02,0.69)
+  L LOD_A_FRONTBUMPER_mm_ext v=1976 size=(1.72,0.50,0.43) c=(0.00,-1.89,0.41)
+  L LOD_A_BODY_mm_misc v=1661 size=(1.52,2.92,0.98) c=(0.00,0.58,0.68)
+  L LOD_A_REARBUMPER_mm_misc v=300 size=(1.37,0.32,0.13) c=(0.00,1.93,0.29)
+  L LOD_A_INTERIOR_mm_cab v=1463 size=(1.49,2.83,0.96) c=(0.00,0.58,0.71)
+  L LOD_A_EXHAUST_mm_ext v=248 size=(0.13,0.17,0.06) c=(-0.50,1.96,0.28)
+  L LOD_A_DOOR_LEFT_mm_ext v=306 size=(0.20,1.30,0.61) c=(0.77,0.05,0.56)
+  L LOD_A_DOOR_RIGHT_mm_ext v=308 size=(0.20,1.30,0.61) c=(-0.77,0.05,0.56)
+  L LOD_A_REARBUMPER_mm_ext v=904 size=(1.56,0.39,0.52) c=(0.00,1.96,0.52)
+
+==== bmw /Users/rokaya/Downloads/bmw-m3-gtr-gt2/source/bmw_m3_gtr.glb
+meshes=35 mats=35
+wheelish_count=5
+  W Object_12 v=7212 size=(2.37,5.43,1.52) c=(0.00,0.13,0.85) mats=rubber_trim.010
+  W Object_50 v=5612 size=(2.32,4.07,0.65) c=(0.00,-0.02,0.43) mats=inner_rim.002
+  W Object_52 v=1429 size=(2.33,4.07,0.65) c=(0.00,-0.02,0.43) mats=wheel_black.002
+  W Object_54 v=15493 size=(2.33,4.07,0.65) c=(0.00,-0.02,0.43) mats=rim.002
+  W Object_56 v=2400 size=(2.33,4.25,0.84) c=(0.00,-0.02,0.43) mats=tyre.010
+lowest_meshes:
+  L Object_56 v=2400 size=(2.33,4.25,0.84) c=(0.00,-0.02,0.43)
+  L Object_4 v=29183 size=(2.38,5.85,1.59) c=(0.00,0.13,0.88)
+  L Object_12 v=7212 size=(2.37,5.43,1.52) c=(0.00,0.13,0.85)
+  L Object_6 v=203 size=(2.26,5.15,0.21) c=(0.00,0.12,0.19)
+  L Object_8 v=5030 size=(2.31,5.42,1.42) c=(0.00,0.11,0.80)
+  L Object_52 v=1429 size=(2.33,4.07,0.65) c=(0.00,-0.02,0.43)
+  L Object_50 v=5612 size=(2.32,4.07,0.65) c=(0.00,-0.02,0.43)
+  L Object_54 v=15493 size=(2.33,4.07,0.65) c=(0.00,-0.02,0.43)
+  L Object_46 v=1207 size=(1.19,3.98,1.06) c=(0.08,0.96,0.63)
+  L Object_14 v=56 size=(2.30,0.03,0.32) c=(0.00,-1.16,0.28)
+  L Object_44 v=106 size=(2.28,0.49,0.08) c=(0.00,-2.47,0.16)
+  L Object_16 v=21444 size=(2.30,5.56,1.44) c=(0.00,0.05,0.84)
+  L Object_24 v=531 size=(2.28,5.43,0.81) c=(0.00,0.13,0.57)
+  L Object_48 v=993 size=(2.01,3.86,0.49) c=(-0.01,-0.04,0.43)
+  L Object_22 v=12172 size=(2.09,5.57,1.22) c=(0.00,0.16,0.81)
+
+==== mclaren /Users/rokaya/Downloads/2015-mclaren-650s-gt3/source/mclaren_650s_gt3.glb
+meshes=50 mats=50
+wheelish_count=4
+  W Mesh_12 v=44609 size=(2.04,3.18,0.50) c=(0.00,0.13,0.34) mats=Rim.004
+  W Mesh_13 v=4392 size=(2.04,3.38,0.70) c=(0.00,0.13,0.34) mats=Tyre.008
+  W Mesh_14 v=600 size=(1.90,2.48,0.29) c=(-0.00,0.13,0.31) mats=Brake_Caliper.004
+  W Mesh_5 v=1152 size=(1.81,3.06,0.38) c=(-0.00,0.13,0.34) mats=Brake_Disk.004
+lowest_meshes:
+  L Mesh_13 v=4392 size=(2.04,3.38,0.70) c=(0.00,0.13,0.34)
+  L Mesh_2 v=61031 size=(2.05,4.55,1.11) c=(0.00,-0.00,0.59)
+  L Mesh_1 v=9980 size=(2.09,4.63,1.09) c=(0.00,-0.06,0.60)
+  L Mesh_15 v=4577 size=(2.04,4.37,1.02) c=(0.00,0.04,0.57)
+  L Mesh_3 v=2427 size=(2.04,4.45,0.90) c=(0.00,-0.04,0.51)
+  L Mesh_20 v=627 size=(2.03,1.37,0.77) c=(0.00,-0.37,0.45)
+  L Mesh_24 v=9647 size=(2.03,1.74,0.97) c=(0.00,-0.32,0.56)
+  L Mesh_25 v=568 size=(1.80,1.26,0.71) c=(0.00,-0.14,0.44)
+  L Mesh_12 v=44609 size=(2.04,3.18,0.50) c=(0.00,0.13,0.34)
+  L Mesh_22 v=13406 size=(1.43,1.81,0.99) c=(0.00,-0.21,0.60)
+  L Mesh_33 v=10396 size=(1.47,1.96,1.03) c=(0.00,-0.21,0.62)
+  L Mesh_39 v=3357 size=(0.51,0.88,0.71) c=(0.35,0.15,0.46)
+  L Mesh_30 v=1646 size=(1.01,1.11,0.64) c=(0.08,-0.55,0.43)
+  L Mesh_37 v=3573 size=(1.62,1.76,1.00) c=(-0.00,-0.22,0.61)
+  L Mesh_29 v=4639 size=(1.23,1.39,0.93) c=(-0.06,-0.25,0.58)
+
+==== countach /Users/rokaya/Downloads/2022-lamborghini-countach-lpi-800-4/source/2022_lamborghini_countach_lpi_800-4.glb
+meshes=1748 mats=16
+wheelish_count=908
+  W polySurface100_l:Lamborghini_CountachLPI8004_2022_Wheel1A_3D_3DWheel1A_Material1_0 v=5 size=(0.00,0.00,0.00) c=(0.01,-0.01,0.00) mats=lLamborghini_CountachLPI8004_2022_Wheel1A_3D_3DWheel1A_Material1
+  W polySurface101_l:Lamborghini_CountachLPI8004_2022_Wheel1A_3D_3DWheel1A_Material1_0 v=4 size=(0.00,0.00,0.00) c=(0.01,-0.01,0.00) mats=lLamborghini_CountachLPI8004_2022_Wheel1A_3D_3DWheel1A_Material1
+  W polySurface102_l:Lamborghini_CountachLPI8004_2022_Wheel1A_3D_3DWheel1A_Material1_0 v=5 size=(0.00,0.00,0.00) c=(0.01,-0.01,0.00) mats=lLamborghini_CountachLPI8004_2022_Wheel1A_3D_3DWheel1A_Material1
+  W polySurface103_l:Lamborghini_CountachLPI8004_2022_Wheel1A_3D_3DWheel1A_Material1_0 v=16 size=(0.00,0.00,0.00) c=(0.01,-0.01,0.00) mats=lLamborghini_CountachLPI8004_2022_Wheel1A_3D_3DWheel1A_Material1
+  W polySurface104_l:Lamborghini_CountachLPI8004_2022_Wheel1A_3D_3DWheel1A_Material1_0 v=6 size=(0.00,0.00,0.00) c=(0.01,-0.01,0.00) mats=lLamborghini_CountachLPI8004_2022_Wheel1A_3D_3DWheel1A_Material1
+  W polySurface105_l:Lamborghini_CountachLPI8004_2022_Wheel1A_3D_3DWheel1A_Material1_0 v=4 size=(0.00,0.00,0.00) c=(0.01,-0.01,0.00) mats=lLamborghini_CountachLPI8004_2022_Wheel1A_3D_3DWheel1A_Material1
+  W polySurface106_l:Lamborghini_CountachLPI8004_2022_Wheel1A_3D_3DWheel1A_Material1_0 v=5 size=(0.00,0.00,0.00) c=(0.01,-0.01,0.00) mats=lLamborghini_CountachLPI8004_2022_Wheel1A_3D_3DWheel1A_Material1
+  W polySurface107_l:Lamborghini_CountachLPI8004_2022_Wheel1A_3D_3DWheel1A_Material1_0 v=48 size=(0.00,0.00,0.00) c=(0.01,-0.01,0.00) mats=lLamborghini_CountachLPI8004_2022_Wheel1A_3D_3DWheel1A_Material1
+  W polySurface108_l:Lamborghini_CountachLPI8004_2022_Wheel1A_3D_3DWheel1A_Material1_0 v=6 size=(0.00,0.00,0.00) c=(0.01,-0.01,0.00) mats=lLamborghini_CountachLPI8004_2022_Wheel1A_3D_3DWheel1A_Material1
+  W polySurface109_l:Lamborghini_CountachLPI8004_2022_Wheel1A_3D_3DWheel1A_Material1_0 v=6 size=(0.00,0.00,0.00) c=(0.01,-0.01,0.00) mats=lLamborghini_CountachLPI8004_2022_Wheel1A_3D_3DWheel1A_Material1
+  W polySurface10_l:Lamborghini_CountachLPI8004_2022_Wheel1A_3D_3DWheel1A_Material1_0 v=27 size=(0.00,0.00,0.00) c=(0.01,-0.01,0.00) mats=lLamborghini_CountachLPI8004_2022_Wheel1A_3D_3DWheel1A_Material1
+  W polySurface110_l:Lamborghini_CountachLPI8004_2022_Wheel1A_3D_3DWheel1A_Material1_0 v=6 size=(0.00,0.00,0.00) c=(0.01,-0.01,0.00) mats=lLamborghini_CountachLPI8004_2022_Wheel1A_3D_3DWheel1A_Material1
+  W polySurface111_l:Lamborghini_CountachLPI8004_2022_Wheel1A_3D_3DWheel1A_Material1_0 v=4 size=(0.00,0.00,0.00) c=(0.01,-0.01,0.00) mats=lLamborghini_CountachLPI8004_2022_Wheel1A_3D_3DWheel1A_Material1
+  W polySurface112_l:Lamborghini_CountachLPI8004_2022_Wheel1A_3D_3DWheel1A_Material1_0 v=6 size=(0.00,0.00,0.00) c=(0.01,-0.01,0.00) mats=lLamborghini_CountachLPI8004_2022_Wheel1A_3D_3DWheel1A_Material1
+  W polySurface113_l:Lamborghini_CountachLPI8004_2022_Wheel1A_3D_3DWheel1A_Material1_0 v=27 size=(0.00,0.00,0.00) c=(0.01,-0.01,0.00) mats=lLamborghini_CountachLPI8004_2022_Wheel1A_3D_3DWheel1A_Material1
+  W polySurface114_l:Lamborghini_CountachLPI8004_2022_Wheel1A_3D_3DWheel1A_Material1_0 v=4 size=(0.00,0.00,0.00) c=(0.01,-0.01,0.00) mats=lLamborghini_CountachLPI8004_2022_Wheel1A_3D_3DWheel1A_Material1
+  W polySurface115_l:Lamborghini_CountachLPI8004_2022_Wheel1A_3D_3DWheel1A_Material1_0 v=5 size=(0.00,0.00,0.00) c=(0.01,-0.01,0.00) mats=lLamborghini_CountachLPI8004_2022_Wheel1A_3D_3DWheel1A_Material1
+  W polySurface116_l:Lamborghini_CountachLPI8004_2022_Wheel1A_3D_3DWheel1A_Material1_0 v=5 size=(0.00,0.00,0.00) c=(0.01,-0.01,0.00) mats=lLamborghini_CountachLPI8004_2022_Wheel1A_3D_3DWheel1A_Material1
+  W polySurface117_l:Lamborghini_CountachLPI8004_2022_Wheel1A_3D_3DWheel1A_Material1_0 v=6 size=(0.00,0.00,0.00) c=(0.01,-0.01,0.00) mats=lLamborghini_CountachLPI8004_2022_Wheel1A_3D_3DWheel1A_Material1
+  W polySurface118_l:Lamborghini_CountachLPI8004_2022_Wheel1A_3D_3DWheel1A_Material1_0 v=4 size=(0.00,0.00,0.00) c=(0.01,-0.01,0.00) mats=lLamborghini_CountachLPI8004_2022_Wheel1A_3D_3DWheel1A_Material1
+  W polySurface119_l:Lamborghini_CountachLPI8004_2022_Wheel1A_3D_3DWheel1A_Material1_0 v=5 size=(0.00,0.00,0.00) c=(0.01,-0.01,0.00) mats=lLamborghini_CountachLPI8004_2022_Wheel1A_3D_3DWheel1A_Material1
+  W polySurface11_l:Lamborghini_CountachLPI8004_2022_Wheel1A_3D_3DWheel1A_Material1_0 v=12 size=(0.00,0.00,0.00) c=(0.01,-0.01,0.00) mats=lLamborghini_CountachLPI8004_2022_Wheel1A_3D_3DWheel1A_Material1
+  W polySurface120_l:Lamborghini_CountachLPI8004_2022_Wheel1A_3D_3DWheel1A_Material1_0 v=5 size=(0.00,0.00,0.00) c=(0.01,-0.01,0.00) mats=lLamborghini_CountachLPI8004_2022_Wheel1A_3D_3DWheel1A_Material1
+  W polySurface121_l:Lamborghini_CountachLPI8004_2022_Wheel1A_3D_3DWheel1A_Material1_0 v=4 size=(0.00,0.00,0.00) c=(0.01,-0.01,0.00) mats=lLamborghini_CountachLPI8004_2022_Wheel1A_3D_3DWheel1A_Material1
+  W polySurface122_l:Lamborghini_CountachLPI8004_2022_Wheel1A_3D_3DWheel1A_Material1_0 v=61 size=(0.00,0.00,0.00) c=(0.01,-0.01,0.00) mats=lLamborghini_CountachLPI8004_2022_Wheel1A_3D_3DWheel1A_Material1
+  W polySurface123_l:Lamborghini_CountachLPI8004_2022_Wheel1A_3D_3DWheel1A_Material1_0 v=5 size=(0.00,0.00,0.00) c=(0.01,-0.01,0.00) mats=lLamborghini_CountachLPI8004_2022_Wheel1A_3D_3DWheel1A_Material1
+  W polySurface124_l:Lamborghini_CountachLPI8004_2022_Wheel1A_3D_3DWheel1A_Material1_0 v=4 size=(0.00,0.00,0.00) c=(0.01,-0.01,0.00) mats=lLamborghini_CountachLPI8004_2022_Wheel1A_3D_3DWheel1A_Material1
+  W polySurface125_l:Lamborghini_CountachLPI8004_2022_Wheel1A_3D_3DWheel1A_Material1_0 v=5 size=(0.00,0.00,0.00) c=(0.01,-0.01,0.00) mats=lLamborghini_CountachLPI8004_2022_Wheel1A_3D_3DWheel1A_Material1
+  W polySurface126_l:Lamborghini_CountachLPI8004_2022_Wheel1A_3D_3DWheel1A_Material1_0 v=5 size=(0.00,0.00,0.00) c=(0.01,-0.01,0.00) mats=lLamborghini_CountachLPI8004_2022_Wheel1A_3D_3DWheel1A_Material1
+  W polySurface127_l:Lamborghini_CountachLPI8004_2022_Wheel1A_3D_3DWheel1A_Material1_0 v=6 size=(0.00,0.00,0.00) c=(0.01,-0.01,0.00) mats=lLamborghini_CountachLPI8004_2022_Wheel1A_3D_3DWheel1A_Material1
+lowest_meshes:
+  L polySurface883_l:Lamborghini_CountachLPI8004_2022_Wheel1A_3D_3DWheel1A_Material1_0 v=26 size=(0.00,0.00,0.00) c=(-0.01,0.01,0.00)
+  L polySurface657_l:Lamborghini_CountachLPI8004_2022_Wheel1A_3D_3DWheel1A_Material1_0 v=26 size=(0.00,0.00,0.00) c=(0.01,0.01,0.00)
+  L polySurface443_l:Lamborghini_CountachLPI8004_2022_Wheel1A_3D_3DWheel1A_Material1_0 v=26 size=(0.00,0.00,0.00) c=(-0.01,-0.01,0.00)
+  L polySurface215_l:Lamborghini_CountachLPI8004_2022_Wheel1A_3D_3DWheel1A_Material1_0 v=26 size=(0.00,0.00,0.00) c=(0.01,-0.01,0.00)
+  L polySurface884_l:Lamborghini_CountachLPI8004_2022_Wheel1A_3D_3DWheel1A_Material1_0 v=26 size=(0.00,0.00,0.00) c=(-0.01,0.02,0.00)
+  L polySurface902_l:Lamborghini_CountachLPI8004_2022_Wheel1A_3D_3DWheel1A_Material1_0 v=26 size=(0.00,0.00,0.00) c=(-0.01,0.01,0.00)
+  L polySurface658_l:Lamborghini_CountachLPI8004_2022_Wheel1A_3D_3DWheel1A_Material1_0 v=26 size=(0.00,0.00,0.00) c=(0.01,0.01,0.00)
+  L polySurface676_l:Lamborghini_CountachLPI8004_2022_Wheel1A_3D_3DWheel1A_Material1_0 v=26 size=(0.00,0.00,0.00) c=(0.01,0.02,0.00)
+  L polySurface444_l:Lamborghini_CountachLPI8004_2022_Wheel1A_3D_3DWheel1A_Material1_0 v=26 size=(0.00,0.00,0.00) c=(-0.01,-0.01,0.00)
+  L polySurface442_l:Lamborghini_CountachLPI8004_2022_Wheel1A_3D_3DWheel1A_Material1_0 v=26 size=(0.00,0.00,0.00) c=(-0.01,-0.01,0.00)
+  L polySurface216_l:Lamborghini_CountachLPI8004_2022_Wheel1A_3D_3DWheel1A_Material1_0 v=26 size=(0.00,0.00,0.00) c=(0.01,-0.01,0.00)
+  L polySurface214_l:Lamborghini_CountachLPI8004_2022_Wheel1A_3D_3DWheel1A_Material1_0 v=26 size=(0.00,0.00,0.00) c=(0.01,-0.01,0.00)
+  L polySurface430_l:Lamborghini_CountachLPI8004_2022_Wheel1A_3D_3DWheel1A_Material1_0 v=80 size=(0.00,0.01,0.01) c=(-0.01,-0.01,0.00)
+  L polySurface202_l:Lamborghini_CountachLPI8004_2022_Wheel1A_3D_3DWheel1A_Material1_0 v=80 size=(0.00,0.01,0.01) c=(0.01,-0.01,0.00)
+  L polySurface201_l:Lamborghini_CountachLPI8004_2022_Wheel1A_3D_3DWheel1A_Material1_0 v=280 size=(0.00,0.01,0.01) c=(0.01,-0.01,0.00)
+
+==== r34v /Users/rokaya/Downloads/2002-nissan-skyline-gt-r-v-spec-ii-nur-r34/source/2002 Nissan Skyline GT-R V-Spec II Nur.glb
+meshes=495 mats=26
+wheelish_count=368
+  W polySurface101_w:_TNRRims_87A18NaTireBlur_Material1_0 v=88 size=(0.00,0.00,0.00) c=(0.01,-0.02,0.00) mats=w_TNRRims_87A18NaTireBlur_Material1
+  W polySurface102_w:_TNRRims_87A18NaTireBlur_Material1_0 v=88 size=(0.00,0.00,0.00) c=(0.01,-0.02,0.00) mats=w_TNRRims_87A18NaTireBlur_Material1
+  W polySurface103_w:_TNRRims_87A18NaTireBlur_Material1_0 v=88 size=(0.00,0.00,0.00) c=(0.01,-0.01,0.00) mats=w_TNRRims_87A18NaTireBlur_Material1
+  W polySurface104_w:_TNRRims_87A18NaTireBlur_Material1_0 v=88 size=(0.00,0.00,0.00) c=(0.01,-0.01,0.01) mats=w_TNRRims_87A18NaTireBlur_Material1
+  W polySurface105_w:_TNRRims_87A18NaTireBlur_Material1_0 v=88 size=(0.00,0.00,0.00) c=(0.01,-0.01,0.00) mats=w_TNRRims_87A18NaTireBlur_Material1
+  W polySurface106_w:_TNRRims_87A18NaTireBlur_Material1_0 v=140 size=(0.00,0.01,0.01) c=(0.01,-0.01,0.00) mats=w_TNRRims_87A18NaTireBlur_Material1
+  W polySurface107_w:_TNRRims_87A18NaTireBlur_Material1_0 v=200 size=(0.00,0.01,0.01) c=(0.01,-0.01,0.00) mats=w_TNRRims_87A18NaTireBlur_Material1
+  W polySurface108_w:_TNRRims_87A18NaTireBlur_Material1_0 v=175 size=(0.00,0.01,0.01) c=(0.01,-0.01,0.00) mats=w_TNRRims_87A18NaTireBlur_Material1
+  W polySurface109_w:_TNRRims_87A18NaTireBlur_Material1_0 v=88 size=(0.00,0.00,0.00) c=(-0.01,-0.01,0.00) mats=w_TNRRims_87A18NaTireBlur_Material1
+  W polySurface110_w:_TNRRims_87A18NaTireBlur_Material1_0 v=88 size=(0.00,0.00,0.00) c=(-0.01,-0.01,0.00) mats=w_TNRRims_87A18NaTireBlur_Material1
+  W polySurface111_w:_TNRRims_87A18NaTireBlur_Material1_0 v=88 size=(0.00,0.00,0.00) c=(-0.01,-0.02,0.00) mats=w_TNRRims_87A18NaTireBlur_Material1
+  W polySurface112_w:_TNRRims_87A18NaTireBlur_Material1_0 v=88 size=(0.00,0.00,0.00) c=(-0.01,-0.01,0.01) mats=w_TNRRims_87A18NaTireBlur_Material1
+  W polySurface113_w:_TNRRims_87A18NaTireBlur_Material1_0 v=88 size=(0.00,0.00,0.00) c=(-0.01,-0.02,0.00) mats=w_TNRRims_87A18NaTireBlur_Material1
+  W polySurface114_w:_TNRRims_87A18NaTireBlur_Material1_0 v=140 size=(0.00,0.01,0.01) c=(-0.01,-0.01,0.00) mats=w_TNRRims_87A18NaTireBlur_Material1
+  W polySurface115_w:_TNRRims_87A18NaTireBlur_Material1_0 v=200 size=(0.00,0.01,0.01) c=(-0.01,-0.01,0.00) mats=w_TNRRims_87A18NaTireBlur_Material1
+  W polySurface116_w:_TNRRims_87A18NaTireBlur_Material1_0 v=175 size=(0.00,0.01,0.01) c=(-0.01,-0.01,0.00) mats=w_TNRRims_87A18NaTireBlur_Material1
+  W polySurface117_w:_TNRRims_87A18NaTireBlur_Material1_0 v=88 size=(0.00,0.00,0.00) c=(0.01,0.01,0.00) mats=w_TNRRims_87A18NaTireBlur_Material1
+  W polySurface118_w:_TNRRims_87A18NaTireBlur_Material1_0 v=88 size=(0.00,0.00,0.00) c=(0.01,0.01,0.00) mats=w_TNRRims_87A18NaTireBlur_Material1
+  W polySurface119_w:_TNRRims_87A18NaTireBlur_Material1_0 v=88 size=(0.00,0.00,0.00) c=(0.01,0.01,0.00) mats=w_TNRRims_87A18NaTireBlur_Material1
+  W polySurface120_w:_TNRRims_87A18NaTireBlur_Material1_0 v=88 size=(0.00,0.00,0.00) c=(0.01,0.01,0.01) mats=w_TNRRims_87A18NaTireBlur_Material1
+  W polySurface121_w:_TNRRims_87A18NaTireBlur_Material1_0 v=88 size=(0.00,0.00,0.00) c=(0.01,0.02,0.00) mats=w_TNRRims_87A18NaTireBlur_Material1
+  W polySurface122_w:_TNRRims_87A18NaTireBlur_Material1_0 v=140 size=(0.00,0.01,0.01) c=(0.01,0.01,0.00) mats=w_TNRRims_87A18NaTireBlur_Material1
+  W polySurface123_w:_TNRRims_87A18NaTireBlur_Material1_0 v=200 size=(0.00,0.01,0.01) c=(0.01,0.01,0.00) mats=w_TNRRims_87A18NaTireBlur_Material1
+  W polySurface124_w:_TNRRims_87A18NaTireBlur_Material1_0 v=175 size=(0.00,0.01,0.01) c=(0.01,0.01,0.00) mats=w_TNRRims_87A18NaTireBlur_Material1
+  W polySurface125_w:_TNRRims_87A18NaTireBlur_Material1_0 v=88 size=(0.00,0.00,0.00) c=(-0.01,0.02,0.00) mats=w_TNRRims_87A18NaTireBlur_Material1
+  W polySurface126_w:_TNRRims_87A18NaTireBlur_Material1_0 v=88 size=(0.00,0.00,0.00) c=(-0.01,0.01,0.00) mats=w_TNRRims_87A18NaTireBlur_Material1
+  W polySurface127_w:_TNRRims_87A18NaTireBlur_Material1_0 v=88 size=(0.00,0.00,0.00) c=(-0.01,0.01,0.00) mats=w_TNRRims_87A18NaTireBlur_Material1
+  W polySurface128_w:_TNRRims_87A18NaTireBlur_Material1_0 v=88 size=(0.00,0.00,0.00) c=(-0.01,0.01,0.01) mats=w_TNRRims_87A18NaTireBlur_Material1
+  W polySurface129_w:_TNRRims_87A18NaTireBlur_Material1_0 v=88 size=(0.00,0.00,0.00) c=(-0.01,0.01,0.00) mats=w_TNRRims_87A18NaTireBlur_Material1
+  W polySurface130_w:_TNRRims_87A18NaTireBlur_Material1_0 v=140 size=(0.00,0.01,0.01) c=(-0.01,0.01,0.00) mats=w_TNRRims_87A18NaTireBlur_Material1
+lowest_meshes:
+  L polySurface102_w:_TNRRims_87A18NaTireBlur_Material1_0 v=88 size=(0.00,0.00,0.00) c=(0.01,-0.02,0.00)
+  L polySurface111_w:_TNRRims_87A18NaTireBlur_Material1_0 v=88 size=(0.00,0.00,0.00) c=(-0.01,-0.02,0.00)
+  L polySurface103_w:_TNRRims_87A18NaTireBlur_Material1_0 v=88 size=(0.00,0.00,0.00) c=(0.01,-0.01,0.00)
+  L polySurface110_w:_TNRRims_87A18NaTireBlur_Material1_0 v=88 size=(0.00,0.00,0.00) c=(-0.01,-0.01,0.00)
+  L polySurface118_w:_TNRRims_87A18NaTireBlur_Material1_0 v=88 size=(0.00,0.00,0.00) c=(0.01,0.01,0.00)
+  L polySurface127_w:_TNRRims_87A18NaTireBlur_Material1_0 v=88 size=(0.00,0.00,0.00) c=(-0.01,0.01,0.00)
+  L polySurface119_w:_TNRRims_87A18NaTireBlur_Material1_0 v=88 size=(0.00,0.00,0.00) c=(0.01,0.01,0.00)
+  L polySurface126_w:_TNRRims_87A18NaTireBlur_Material1_0 v=88 size=(0.00,0.00,0.00) c=(-0.01,0.01,0.00)
+  L polySurface106_w:_TNRRims_87A18NaTireBlur_Material1_0 v=140 size=(0.00,0.01,0.01) c=(0.01,-0.01,0.00)
+  L polySurface114_w:_TNRRims_87A18NaTireBlur_Material1_0 v=140 size=(0.00,0.01,0.01) c=(-0.01,-0.01,0.00)
+  L polySurface122_w:_TNRRims_87A18NaTireBlur_Material1_0 v=140 size=(0.00,0.01,0.01) c=(0.01,0.01,0.00)
+  L polySurface130_w:_TNRRims_87A18NaTireBlur_Material1_0 v=140 size=(0.00,0.01,0.01) c=(-0.01,0.01,0.00)
+  L polySurface123_w:_TNRRims_87A18NaTireBlur_Material1_0 v=200 size=(0.00,0.01,0.01) c=(0.01,0.01,0.00)
+  L polySurface131_w:_TNRRims_87A18NaTireBlur_Material1_0 v=200 size=(0.00,0.01,0.01) c=(-0.01,0.01,0.00)
+  L polySurface107_w:_TNRRims_87A18NaTireBlur_Material1_0 v=200 size=(0.00,0.01,0.01) c=(0.01,-0.01,0.00)
+
+==== brian /Users/rokaya/Downloads/nissan-r34-brians-fast-furious-wwwvecarzcom/source/brians_r34_from_2_fast_2_furious.glb
+meshes=766 mats=37
+wheelish_count=637
+  W Object_102 v=80 size=(0.00,0.03,0.03) c=(0.06,-0.11,0.03) mats=rNissan_SkylineGTRR34F2_1999_Wheel1A_3D_3DWheel1A_Material1.012
+  W Object_1039 v=16 size=(0.00,0.03,0.03) c=(-0.06,-0.11,0.03) mats=rNissan_SkylineGTRR34F2_1999_Wheel1A_3D_3DWheel1A_Material1.012
+  W Object_1042 v=31 size=(0.00,0.03,0.03) c=(-0.06,-0.11,0.03) mats=rNissan_SkylineGTRR34F2_1999_Wheel1A_3D_3DWheel1A_Material1.012
+  W Object_1045 v=72 size=(0.00,0.03,0.03) c=(-0.06,-0.11,0.03) mats=rNissan_SkylineGTRR34F2_1999_Wheel1A_3D_3DWheel1A_Material1.012
+  W Object_1075 v=5 size=(0.00,0.01,0.01) c=(-0.07,-0.11,0.03) mats=rNissan_SkylineGTRR34F2_1999_Wheel1A_3D_3DWheel1A_Material1.013
+  W Object_1078 v=30 size=(0.00,0.01,0.01) c=(-0.07,-0.11,0.03) mats=rNissan_SkylineGTRR34F2_1999_Wheel1A_3D_3DWheel1A_Material1.013
+  W Object_1081 v=16 size=(0.00,0.01,0.01) c=(-0.07,-0.10,0.02) mats=rNissan_SkylineGTRR34F2_1999_Wheel1A_3D_3DWheel1A_Material1.013
+  W Object_1084 v=16 size=(0.00,0.00,0.01) c=(-0.07,-0.11,0.01) mats=rNissan_SkylineGTRR34F2_1999_Wheel1A_3D_3DWheel1A_Material1.013
+  W Object_1087 v=16 size=(0.00,0.01,0.01) c=(-0.07,-0.12,0.02) mats=rNissan_SkylineGTRR34F2_1999_Wheel1A_3D_3DWheel1A_Material1.013
+  W Object_1090 v=16 size=(0.00,0.00,0.01) c=(-0.07,-0.11,0.04) mats=rNissan_SkylineGTRR34F2_1999_Wheel1A_3D_3DWheel1A_Material1.013
+  W Object_1093 v=16 size=(0.00,0.01,0.01) c=(-0.07,-0.10,0.03) mats=rNissan_SkylineGTRR34F2_1999_Wheel1A_3D_3DWheel1A_Material1.013
+  W Object_1096 v=16 size=(0.00,0.01,0.01) c=(-0.07,-0.12,0.03) mats=rNissan_SkylineGTRR34F2_1999_Wheel1A_3D_3DWheel1A_Material1.013
+  W Object_1099 v=24 size=(0.00,0.00,0.00) c=(-0.07,-0.11,0.03) mats=rNissan_SkylineGTRR34F2_1999_Wheel1A_3D_3DWheel1A_Material1.013
+  W Object_1102 v=24 size=(0.00,0.00,0.00) c=(-0.07,-0.11,0.02) mats=rNissan_SkylineGTRR34F2_1999_Wheel1A_3D_3DWheel1A_Material1.013
+  W Object_1105 v=24 size=(0.00,0.00,0.00) c=(-0.07,-0.12,0.02) mats=rNissan_SkylineGTRR34F2_1999_Wheel1A_3D_3DWheel1A_Material1.013
+  W Object_1108 v=24 size=(0.00,0.00,0.00) c=(-0.07,-0.12,0.03) mats=rNissan_SkylineGTRR34F2_1999_Wheel1A_3D_3DWheel1A_Material1.013
+  W Object_1111 v=24 size=(0.00,0.00,0.00) c=(-0.07,-0.11,0.03) mats=rNissan_SkylineGTRR34F2_1999_Wheel1A_3D_3DWheel1A_Material1.013
+  W Object_1114 v=24 size=(0.00,0.00,0.00) c=(-0.07,-0.12,0.02) mats=rNissan_SkylineGTRR34F2_1999_Wheel1A_3D_3DWheel1A_Material1.013
+  W Object_1117 v=24 size=(0.00,0.00,0.00) c=(-0.07,-0.12,0.02) mats=rNissan_SkylineGTRR34F2_1999_Wheel1A_3D_3DWheel1A_Material1.013
+  W Object_1120 v=24 size=(0.00,0.00,0.00) c=(-0.07,-0.11,0.02) mats=rNissan_SkylineGTRR34F2_1999_Wheel1A_3D_3DWheel1A_Material1.013
+  W Object_1123 v=24 size=(0.00,0.00,0.00) c=(-0.07,-0.11,0.02) mats=rNissan_SkylineGTRR34F2_1999_Wheel1A_3D_3DWheel1A_Material1.013
+  W Object_1126 v=24 size=(0.00,0.00,0.00) c=(-0.07,-0.11,0.03) mats=rNissan_SkylineGTRR34F2_1999_Wheel1A_3D_3DWheel1A_Material1.013
+  W Object_1129 v=24 size=(0.00,0.00,0.00) c=(-0.07,-0.11,0.03) mats=rNissan_SkylineGTRR34F2_1999_Wheel1A_3D_3DWheel1A_Material1.013
+  W Object_1132 v=24 size=(0.00,0.00,0.00) c=(-0.07,-0.11,0.03) mats=rNissan_SkylineGTRR34F2_1999_Wheel1A_3D_3DWheel1A_Material1.013
+  W Object_1135 v=24 size=(0.00,0.00,0.00) c=(-0.07,-0.11,0.03) mats=rNissan_SkylineGTRR34F2_1999_Wheel1A_3D_3DWheel1A_Material1.013
+  W Object_1138 v=24 size=(0.00,0.00,0.00) c=(-0.07,-0.12,0.03) mats=rNissan_SkylineGTRR34F2_1999_Wheel1A_3D_3DWheel1A_Material1.013
+  W Object_1141 v=24 size=(0.00,0.00,0.00) c=(-0.07,-0.12,0.03) mats=rNissan_SkylineGTRR34F2_1999_Wheel1A_3D_3DWheel1A_Material1.013
+  W Object_1144 v=4 size=(0.00,0.00,0.01) c=(-0.07,-0.12,0.01) mats=rNissan_SkylineGTRR34F2_1999_Wheel1A_3D_3DWheel1A_Material1.013
+  W Object_1147 v=10 size=(0.00,0.00,0.00) c=(-0.07,-0.12,0.01) mats=rNissan_SkylineGTRR34F2_1999_Wheel1A_3D_3DWheel1A_Material1.013
+  W Object_1150 v=4 size=(0.00,0.00,0.01) c=(-0.07,-0.11,0.01) mats=rNissan_SkylineGTRR34F2_1999_Wheel1A_3D_3DWheel1A_Material1.013
+lowest_meshes:
+  L Object_1985 v=480 size=(0.02,0.05,0.05) c=(0.06,0.10,0.03)
+  L Object_2949 v=480 size=(0.02,0.05,0.05) c=(-0.06,0.10,0.03)
+  L Object_988 v=480 size=(0.02,0.05,0.05) c=(-0.06,-0.11,0.03)
+  L Object_21 v=480 size=(0.02,0.05,0.05) c=(0.06,-0.11,0.03)
+  L Object_1949 v=72 size=(0.00,0.05,0.05) c=(0.05,0.10,0.02)
+  L Object_2898 v=72 size=(0.00,0.05,0.05) c=(-0.05,0.10,0.02)
+  L Object_15 v=72 size=(0.00,0.05,0.05) c=(0.05,-0.11,0.03)
+  L Object_964 v=72 size=(0.00,0.05,0.05) c=(-0.05,-0.11,0.03)
+  L Object_2901 v=216 size=(0.00,0.05,0.05) c=(-0.07,0.10,0.03)
+  L Object_1952 v=216 size=(0.00,0.05,0.05) c=(0.07,0.10,0.03)
+  L Object_967 v=216 size=(0.00,0.05,0.05) c=(-0.07,-0.11,0.03)
+  L Object_18 v=216 size=(0.00,0.05,0.05) c=(0.07,-0.11,0.03)
+  L Object_2973 v=4229 size=(0.01,0.04,0.04) c=(-0.07,0.10,0.03)
+  L Object_2219 v=30 size=(0.00,0.04,0.04) c=(0.07,0.10,0.03)
+  L Object_2213 v=48 size=(0.00,0.04,0.04) c=(0.05,0.10,0.02)
+
+==== tuktuk None
+MISSING

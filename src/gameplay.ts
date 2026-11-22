@@ -55,7 +55,11 @@ export function stepScore(s: RunState, dt: number, speed: number, slip: number, 
     s.score += dt * speed * angle * s.combo * 8
   } else if (s.grace > 0) {
     s.grace = Math.max(0, s.grace - dt)
-    if (s.grace === 0) endRun(s, 'chain_broken')
+    // Chain expiry only resets the multiplier — crash / leave asphalt still end the run.
+    if (s.grace === 0) {
+      resetChain(s)
+      announce(s, 'chain_broken')
+    }
   }
   return drift
 }

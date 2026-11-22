@@ -4,6 +4,8 @@ import { defineConfig } from 'vite'
 
 // https://vite.dev/config/
 export default defineConfig({
+  // Relative base so CrazyGames (and any subfolder host) can load assets.
+  base: './',
   plugins: [
     react(),
     babel({ presets: [reactCompilerPreset()] })

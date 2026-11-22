@@ -37,15 +37,26 @@ test('direction transitions preserve the multiplier and award a single link bonu
     assert.ok(s.score - next < 20)
   }
 })
-test('expired transitions and offroad end the run; deep spins keep the chain', () => {
-  for (const reason of ['expired', 'offroad']) {
-    const s = g.newRun()
-    g.stepScore(s, 4.2, 30, .35, true)
-    g.stepScore(s, reason === 'expired' ? 1.6 : .04, 30, 0, reason !== 'offroad')
-    assert.equal(s.combo, 1)
-    assert.equal(s.grace, 0)
-    assert.equal(s.crashed, true)
-  }
+test('expired chain resets multiplier; offroad ends the run; deep spins keep the chain', () => {
+  const expired = g.newRun()
+  // Build past ×1 (COMBO_TIER_TIME / quality for angle .35 ≈ .7)
+  for (let i = 0; i < 60 * (g.COMBO_TIER_TIME / .7 + .3); i++) g.stepScore(expired, 1 / 60, 30, .35, true)
+  assert.ok(expired.combo > 1)
+  const peak = expired.combo
+  g.stepScore(expired, 1.6, 30, 0, true)
+  assert.equal(expired.combo, 1)
+  assert.equal(expired.grace, 0)
+  assert.equal(expired.crashed, false)
+  assert.equal(expired.event, 'chain_broken')
+  assert.ok(peak > 1)
+
+  const offroad = g.newRun()
+  g.stepScore(offroad, 4.2, 30, .35, true)
+  g.stepScore(offroad, .04, 30, 0, false)
+  assert.equal(offroad.combo, 1)
+  assert.equal(offroad.grace, 0)
+  assert.equal(offroad.crashed, true)
+
   const spin = g.newRun()
   g.stepScore(spin, 4.2, 30, .35, true)
   assert.equal(g.stepScore(spin, .04, 30, 1.4, true), true)
@@ -120,7 +131,8 @@ test('startup has no chain timeout; leaving the road still ends a fresh run', ()
 test('ended runs freeze scoring and traffic and a new run starts clean', () => {
   const s = { ...initialDriving(), ...g.newRun() }
   g.stepScore(s, .1, 30, .35, true)
-  g.stepScore(s, 1.6, 30, 0, true)
+  g.stepScore(s, .04, 30, 0, false) // offroad ends the run
+  assert.equal(s.crashed, true)
   const before = { ...s }
   const traffic = [{ x: 3, z: 6, speed: 15, passed: false }]
   assert.equal(g.stepScore(s, 1, 30, .35, true), false)

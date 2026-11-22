@@ -5,7 +5,9 @@ import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js'
 import * as THREE from 'three'
 import { roadsidePose, wrapAlongRoad } from './road'
 
-const ROOT = '/restaurant'
+import { RESTAURANT_ROOT } from './bootAssets'
+
+const ROOT = RESTAURANT_ROOT
 
 type Spot = { side: number; dist: number; pathZ: number; scale: number; yawBias: number }
 

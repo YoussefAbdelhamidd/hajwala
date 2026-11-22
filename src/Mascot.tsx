@@ -5,7 +5,9 @@ import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js'
 import * as THREE from 'three'
 import type { MutableRefObject } from 'react'
 
-const ROOT = '/57dc3d0f-669e-4be7-a9ec-70d5a4e98508'
+import { MASCOT_ROOT } from './bootAssets'
+
+const ROOT = MASCOT_ROOT
 
 /** Local seat in the player car group — rear deck / trunk (car faces −Z). */
 const TRUNK = { x: 0, y: 0.92, z: 1.72 }
